@@ -3,7 +3,7 @@
 #include <iostream>
 
 glm::mat4 quatToMat4(glm::quat q) {
-	float length = sqrt(pow(q.x, 2) + pow(q.y, 2) + pow(q.z, 2) + pow(q.w, 2));
+	float length = sqrt(q.x * q.x + q.y * q.y + q.z * q.z + q.w * q.w);
 	float s = 2 / length;
 
 	glm::mat4 mat4(
