@@ -1,3 +1,5 @@
+#define BUFFER_OFFSET(bytes) ((GLubyte*) NULL + (bytes)) 
+
 #include "GameManager.h"
 #include <iostream>
 #include <string>
@@ -97,15 +99,9 @@ void GameManager::createVAO() {
 	CHECK_GL_ERROR();
 
 	model.reset(new Model("models/bunny.obj", false));
-	model->getVertices()->bind();
-	program->setAttributePointer("position", 3);
-	CHECK_GL_ERROR();
-	/**
-	  * Add normals to shader here, when you have loaded from file
-	  * i.e., remove the below line, and add the proper normals instead.
-	  */
-	model->getNormals()->bind();
-	program->setAttributePointer("in_Normal", 3);
+	model->getInterleavedVBO()->bind();
+	program->setAttributePointer("position", 3, GL_FLOAT, GL_FALSE, 6*sizeof(float), BUFFER_OFFSET(0));
+	program->setAttributePointer("in_Normal", 3, GL_FLOAT, GL_FALSE, 6*sizeof(float), BUFFER_OFFSET(3*sizeof(float)));
 	
 	//Unbind VBOs and VAO
 	vertices->unbind(); //Unbinds both vertices and normals

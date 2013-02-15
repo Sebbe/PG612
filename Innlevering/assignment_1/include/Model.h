@@ -33,18 +33,16 @@ public:
 	~Model();
 
 	inline MeshPart getMesh() {return root;}
-	inline std::shared_ptr<GLUtils::VBO> getVertices() {return vertices;}
-	inline std::shared_ptr<GLUtils::VBO> getNormals() {return normals;}
+	inline std::shared_ptr<GLUtils::VBO> getInterleavedVBO() {return interleavedVBO;}
 
 private:
 	static void loadRecursive(MeshPart& part, bool invert,
-		std::vector<float>& vertex_data, std::vector<float> &normal_data, const aiScene* scene, const aiNode* node);
+		std::vector<float>& vertexNormal_data, const aiScene* scene, const aiNode* node);
 			
 	const aiScene* scene;
 	MeshPart root;
 
-	std::shared_ptr<GLUtils::VBO> normals;
-	std::shared_ptr<GLUtils::VBO> vertices;
+	std::shared_ptr<GLUtils::VBO> interleavedVBO;
 
 	glm::vec3 min_dim;
 	glm::vec3 max_dim;
