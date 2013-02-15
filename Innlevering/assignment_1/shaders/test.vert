@@ -4,7 +4,7 @@ uniform mat4 modelview_matrix;
 uniform mat3 normal_matrix;
 
 in  vec3 position;
-in  vec3 normal;
+in  vec3 in_Normal;
 
 flat out vec3 color;
 smooth out vec3 v;
@@ -17,5 +17,5 @@ void main() {
 	l = normalize(vec3(200.0f, 200.0f, 200.0f) - pos.xyz);
 	gl_Position = projection_matrix * pos;
 	color = vec3(0.5f, 0.5f, 1.0f);
-	normal_smooth = normal_matrix*normal;
+	normal_smooth = normal_matrix*in_Normal;
 }

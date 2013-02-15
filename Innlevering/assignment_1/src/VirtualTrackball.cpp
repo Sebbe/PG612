@@ -2,12 +2,17 @@
 #include <cmath>
 #include <iostream>
 
-glm::mat4 quatToMat4(glm::quat m_q) {
-	/**
-	  * Implement so that the we generate the correct transformation
-	  * matrix from the input quaternion
-	  */
-	return glm::mat4(1.0);
+glm::mat4 quatToMat4(glm::quat q) {
+	float length = sqrt(pow(q.x, 2) + pow(q.y, 2) + pow(q.z, 2) + pow(q.w, 2));
+	float s = 2 / length;
+
+	glm::mat4 mat4(
+		1 - (s * (pow(q.y, 2) + pow(q.z, 2))), s * (q.x * q.y - q.w * q.z),           s * (q.x * q.z + q.w * q.y),           0,
+		s * (q.x * q.y + q.w * q.z),           1 - (s * (pow(q.x, 2) + pow(q.z, 2))), s * (q.y * q.z - q.w * q.x),           0,
+		s * (q.x * q.z - q.w * q.y),           s * (q.y * q.z + q.w * q.x),           1 - (s * (pow(q.x, 2) + pow(q.y, 2))), 0,
+		0,                                     0,                                     0,                                     1
+	);
+	return mat4;
 }
 
 VirtualTrackball::VirtualTrackball() {
@@ -58,9 +63,9 @@ void VirtualTrackball::setWindowSize(int w, int h) {
 
 glm::vec2 VirtualTrackball::getNormalizedWindowCoordinates(int x, int y) {
 	glm::vec2 coord = glm::vec2(0.0f);
-	/**
-	  * Here, you need to find the normalized window coordinates
-	  */
+	
+	coord.x = static_cast<float>(x) / 800 - 0.5;
+	coord.y = 0.5 - static_cast<float>(y) / 600;
 
 	std::cout << "Normalized coordinates: " << coord.x << ", " << coord.y << std::endl;
 
@@ -74,10 +79,23 @@ glm::vec3 VirtualTrackball::getClosestPointOnUnitSphere(int x, int y) {
 
 	normalized_coords = getNormalizedWindowCoordinates(x, y);
 	
+	k = sqrt(normalized_coords.x * normalized_coords.x + normalized_coords.y * normalized_coords.y);
+
+	std::cout << "K: " << k << std::endl;
 	/**
 	  * Find the point on the unit sphere here from the
 	  * normalized window coordinates
 	  */
+
+	if(k >= 0.5) {
+		point_on_sphere.x = normalized_coords.x / k;
+		point_on_sphere.y = normalized_coords.y / k;
+		point_on_sphere.z = 0;
+	} else {
+		point_on_sphere.x = normalized_coords.x * 2;
+		point_on_sphere.y = normalized_coords.y * 2;
+		point_on_sphere.z = sqrt((1 - 4*k*k));
+	}
 
 	std::cout << "Point on sphere: " << point_on_sphere.x << ", " << point_on_sphere.y << ", " << point_on_sphere.z << std::endl;
 

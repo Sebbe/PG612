@@ -104,7 +104,8 @@ void GameManager::createVAO() {
 	  * Add normals to shader here, when you have loaded from file
 	  * i.e., remove the below line, and add the proper normals instead.
 	  */
-	program->setAttributePointer("normal", 3);
+	model->getNormals()->bind();
+	program->setAttributePointer("in_Normal", 3);
 	
 	//Unbind VBOs and VAO
 	vertices->unbind(); //Unbinds both vertices and normals

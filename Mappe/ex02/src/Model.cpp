@@ -30,8 +30,10 @@ Model::Model(std::string filename, bool invert) {
 	n_vertices = vertex_data.size();
 
 	//Create the VBOs from the data.
-	if (fmod(static_cast<float>(n_vertices), 3.0f) < 0.000001f) 
+	if (fmod(static_cast<float>(n_vertices), 3.0f) < 0.000001f) {
 		vertices.reset(new GLUtils::VBO(vertex_data.data(), n_vertices*sizeof(float)));
+		normals.reset(new GLUtils::VBO(normal_data.data(), n_vertices*sizeof(float)));
+	}
 	else
 		THROW_EXCEPTION("The number of vertices in the mesh is wrong");
 }
@@ -59,7 +61,7 @@ void Model::loadRecursive(MeshPart& part, bool invert,
 
 		//Allocate data
 		vertex_data.reserve(vertex_data.size() + part.count*3);
-
+		normal_data.reserve(normal_data.size() + part.count*3);
 		//Add the vertices from file
 		for (unsigned int t = 0; t < mesh->mNumFaces; ++t) {
 			const struct aiFace* face = &mesh->mFaces[t];
