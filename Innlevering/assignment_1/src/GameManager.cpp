@@ -75,7 +75,7 @@ void GameManager::setOpenGLStates() {
 }
 
 void GameManager::createMatrices() {
-	projection_matrix = glm::perspective(45.0f,	window_width / (float) window_height, 1.0f, 10.f);
+	projection_matrix = glm::perspective(120.0f,	window_width / (float) window_height, 1.0f, 10.f);
 	model_matrix = glm::scale(glm::mat4(1.0f), glm::vec3(3));
 	view_matrix = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, -5.0f));
 }

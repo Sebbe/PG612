@@ -50,11 +50,11 @@ glm::mat4 VirtualTrackball::rotate(int x, int y) {
 	  */
 	
 	theta = glm::degrees(glm::acos(glm::dot(point_on_sphere_begin, point_on_sphere_end)));
-	axis_of_rotation = glm::cross(point_on_sphere_end, point_on_sphere_begin);
+	axis_of_rotation = glm::normalize(glm::cross(point_on_sphere_end, point_on_sphere_begin));
 
 	quat_new = glm::rotate(quat_old, theta, axis_of_rotation);
 
-	std::cout << "Angle: " << theta << std::endl;
+	//std::cout << "Angle: " << theta << std::endl;
 	std::cout << "Axis: " << axis_of_rotation.x << " " << axis_of_rotation.y << " " << axis_of_rotation.z << std::endl;
 
 	return quatToMat4(quat_new);
@@ -68,8 +68,8 @@ void VirtualTrackball::setWindowSize(int w, int h) {
 glm::vec2 VirtualTrackball::getNormalizedWindowCoordinates(int x, int y) {
 	glm::vec2 coord = glm::vec2(0.0f);
 	
-	coord.x = static_cast<float>(x) / w - 0.5;
-	coord.y = 0.5 - static_cast<float>(y) / h;
+	coord.x = static_cast<float>(x) / w - 0.5f;
+	coord.y = 0.5f - static_cast<float>(y) / h;
 
 	//std::cout << "Normalized coordinates: " << coord.x << ", " << coord.y << std::endl;
 
