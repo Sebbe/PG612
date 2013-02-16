@@ -44,12 +44,15 @@ glm::mat4 VirtualTrackball::rotate(int x, int y) {
 	float theta = 0.0f; //angle of rotation
 	
 	point_on_sphere_end = getClosestPointOnUnitSphere(x, y);
+
 	/**
 	  * Find axis of rotation and angle here. Construct the
 	  * rotation quaternion using glm helper functions
 	  */
 	
+	//finda theta
 	theta = glm::degrees(glm::acos(glm::dot(point_on_sphere_begin, point_on_sphere_end)));
+	//find axis of rotation with the cross product
 	axis_of_rotation = glm::cross(point_on_sphere_end, point_on_sphere_begin);
 
 	quat_new = glm::rotate(quat_old, theta, axis_of_rotation);
@@ -68,6 +71,7 @@ void VirtualTrackball::setWindowSize(int w, int h) {
 glm::vec2 VirtualTrackball::getNormalizedWindowCoordinates(int x, int y) {
 	glm::vec2 coord = glm::vec2(0.0f);
 	
+	/* shouldnt be hardcoded (should be radius = 0.5 (or whatever the zoom is */
 	coord.x = static_cast<float>(x) / w - 0.5f;
 	coord.y = 0.5f - static_cast<float>(y) / h;
 
@@ -83,6 +87,7 @@ glm::vec3 VirtualTrackball::getClosestPointOnUnitSphere(int x, int y) {
 
 	normalized_coords = getNormalizedWindowCoordinates(x, y);
 	
+	// lenght
 	k = sqrt(normalized_coords.x * normalized_coords.x + normalized_coords.y * normalized_coords.y);
 
 	//std::cout << "K: " << k << std::endl;

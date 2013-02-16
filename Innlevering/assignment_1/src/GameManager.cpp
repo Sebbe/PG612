@@ -101,6 +101,7 @@ void GameManager::createVAO() {
 	glBindVertexArray(vao);
 	CHECK_GL_ERROR();
 
+	// laster model og binder den og setter normaler
 	model.reset(new Model(model_to_load, false));
 	model->getInterleavedVBO()->bind();
 	program->setAttributePointer("position", 3, GL_FLOAT, GL_FALSE, 6*sizeof(float), BUFFER_OFFSET(0));
@@ -206,6 +207,10 @@ void GameManager::play() {
 	quit();
 }
 
+/**
+ * Simpel zoom funksjon
+ * Setter projection matrisen på nytt også
+ */
 void GameManager::zoom(float factor) {
 	float nFov = fov + factor;
 	if(nFov < 90.0f && nFov >= 5)
