@@ -18,8 +18,10 @@ using GLUtils::VBO;
 using GLUtils::Program;
 using GLUtils::readFile;
 
-GameManager::GameManager() {
+GameManager::GameManager(char* argv) {
 	my_timer.restart();
+	model_to_load = argv;
+	std::cout << argv << std::endl;
 }
 
 GameManager::~GameManager() {
@@ -75,7 +77,8 @@ void GameManager::setOpenGLStates() {
 }
 
 void GameManager::createMatrices() {
-	projection_matrix = glm::perspective(120.0f,	window_width / (float) window_height, 1.0f, 10.f);
+	fov = 45.0f;
+	projection_matrix = glm::perspective(fov,	window_width / (float) window_height, 1.0f, 10.f);
 	model_matrix = glm::scale(glm::mat4(1.0f), glm::vec3(3));
 	view_matrix = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, -5.0f));
 }
@@ -98,7 +101,7 @@ void GameManager::createVAO() {
 	glBindVertexArray(vao);
 	CHECK_GL_ERROR();
 
-	model.reset(new Model("models/bunny.obj", false));
+	model.reset(new Model(model_to_load, false));
 	model->getInterleavedVBO()->bind();
 	program->setAttributePointer("position", 3, GL_FLOAT, GL_FALSE, 6*sizeof(float), BUFFER_OFFSET(0));
 	program->setAttributePointer("in_Normal", 3, GL_FLOAT, GL_FALSE, 6*sizeof(float), BUFFER_OFFSET(3*sizeof(float)));
@@ -181,6 +184,14 @@ void GameManager::play() {
 				if (event.key.keysym.sym == SDLK_q
 						&& event.key.keysym.mod & KMOD_CTRL) //Ctrl+q
 					doExit = true;
+				if (event.key.keysym.sym == SDLK_PLUS)
+					zoom(5.0f);
+				if (event.key.keysym.sym == SDLK_MINUS)
+					zoom(-5.0f);
+				if (event.key.keysym.sym == SDLK_b)
+					zoom(5.0f);
+				if (event.key.keysym.sym == SDLK_v)
+					zoom(-5.0f);
 				break;
 			case SDL_QUIT: //e.g., user clicks the upper right x
 				doExit = true;
@@ -193,6 +204,14 @@ void GameManager::play() {
 		SDL_GL_SwapWindow(main_window);
 	}
 	quit();
+}
+
+void GameManager::zoom(float factor) {
+	float nFov = fov + factor;
+	if(nFov < 90.0f && nFov >= 5)
+		fov = nFov;
+	projection_matrix = glm::perspective(fov, window_width / (float) window_height, 1.0f, 10.f);
+	glUniformMatrix4fv(program->getUniform("projection_matrix"), 1, 0, glm::value_ptr(projection_matrix));
 }
 
 void GameManager::quit() {
