@@ -23,7 +23,7 @@ public:
 	/**
 	 * Constructor
 	 */
-	GameManager();
+	GameManager(char* argv);
 
 	/**
 	 * Destructor
@@ -80,6 +80,12 @@ protected:
 	 */
 	void createVAO();
 
+	/**
+	 * Zoom
+	 *
+	 */
+	void zoom(float factor);
+
 	static const unsigned int window_width = 800;
 	static const unsigned int window_height = 600;
 
@@ -102,9 +108,12 @@ private:
 	glm::mat3 normal_matrix; //< OpenGL matrix to transfor normals
 	glm::mat4 trackball_view_matrix; //< OpenGL camera matrix for the trackball
 	
+	float fov;
 	VirtualTrackball trackball;
 	SDL_Window* main_window; //< Our window handle
-	SDL_GLContext main_context; //< Our opengl context handle 
+	SDL_GLContext main_context; //< Our opengl context handle
+
+	std::string model_to_load;
 };
 
 #endif // _GAMEMANAGER_H_

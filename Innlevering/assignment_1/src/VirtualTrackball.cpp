@@ -50,12 +50,12 @@ glm::mat4 VirtualTrackball::rotate(int x, int y) {
 	  */
 	
 	theta = glm::degrees(glm::acos(glm::dot(point_on_sphere_begin, point_on_sphere_end)));
-	axis_of_rotation = glm::normalize(glm::cross(point_on_sphere_end, point_on_sphere_begin));
+	axis_of_rotation = glm::cross(point_on_sphere_end, point_on_sphere_begin);
 
 	quat_new = glm::rotate(quat_old, theta, axis_of_rotation);
 
 	//std::cout << "Angle: " << theta << std::endl;
-	std::cout << "Axis: " << axis_of_rotation.x << " " << axis_of_rotation.y << " " << axis_of_rotation.z << std::endl;
+	//std::cout << "Axis: " << axis_of_rotation.x << " " << axis_of_rotation.y << " " << axis_of_rotation.z << std::endl;
 
 	return quatToMat4(quat_new);
 }
