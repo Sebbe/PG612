@@ -1,0 +1,343 @@
+#include "GameManager.h"
+#include <iostream>
+#include <string>
+#include <sstream>
+#include <vector>
+#include <assert.h>
+#include <stdexcept>
+
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
+
+#include <IL/il.h>
+#include <IL/ilu.h>
+
+#include "GlTools.h"
+using std::cerr;
+using std::endl;
+
+GameManager::GameManager() {
+	my_timer.restart();
+}
+
+GameManager::~GameManager() {
+}
+
+void GameManager::createOpenGLContext() {
+	//Set OpenGL major an minor versions
+	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
+	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 3);
+
+	// Set OpenGL attributes
+	SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1); // Use double buffering
+	SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 16); // Use framebuffer with 16 bit depth buffer
+	SDL_GL_SetAttribute(SDL_GL_RED_SIZE, 8); // Use framebuffer with 8 bit for red
+	SDL_GL_SetAttribute(SDL_GL_GREEN_SIZE, 8); // Use framebuffer with 8 bit for green
+	SDL_GL_SetAttribute(SDL_GL_BLUE_SIZE, 8); // Use framebuffer with 8 bit for blue
+	SDL_GL_SetAttribute(SDL_GL_ALPHA_SIZE, 8); // Use framebuffer with 8 bit for alpha
+
+	SDL_WM_SetCaption("NITH - PG612 Example OpenGL Program", "");
+
+	// Initalize video
+	if (SDL_SetVideoMode(window_width, window_height, 0, SDL_OPENGL
+			| SDL_DOUBLEBUF) == NULL) {
+		std::stringstream err;
+		err << "SDL_SetVideoMode failed ";
+		throw std::runtime_error(err.str());
+	}
+
+	// Init glew
+	// glewExperimental is required in openGL 3.1 
+	// to create forward compatible contexts 
+	glewExperimental = GL_TRUE;
+	GLenum glewErr = glewInit();
+	if (glewErr != GLEW_OK) {
+		std::stringstream err;
+		err << "Error initializing GLEW: " << glewGetErrorString(glewErr);
+		throw std::runtime_error(err.str());
+	}
+
+	// Unfortunately glewInit generates an OpenGL error, but does what it's
+	// supposed to (setting function pointers for core functionality).
+	// Lets do the ugly thing of swallowing the error....
+	glGetError();
+}
+
+void GameManager::setOpenGLStates() {
+	glEnable(GL_DEPTH_TEST);
+	glDepthFunc(GL_LEQUAL);
+	glEnable(GL_CULL_FACE);
+	glEnable(GL_PRIMITIVE_RESTART);
+	glClearColor(0.0, 0.0, 0.5, 1.0);
+}
+
+void GameManager::createMatrices() {
+	projection_matrix = glm::perspective(45.0f, window_width / (float) window_height, 0.2f, 3.f);
+
+	model_matrix = glm::mat4(1.0);
+	model_matrix = glm::rotate(model_matrix, 25.0f, glm::vec3(0.0f, 1.0f, 0.0f));
+	model_matrix = glm::translate(model_matrix, glm::vec3(-0.5f, -0.5f, -0.5f));
+
+	view_matrix = glm::mat4(1.0f);
+	view_matrix = glm::rotate(view_matrix, 25.0f, glm::vec3(1.0f, 0.0f, 0.0f));
+	view_matrix = glm::translate(view_matrix, glm::vec3(0.0f, 0.0f, -1.0f));
+}
+
+void GameManager::createSimpleProgram() {
+	/**
+	  * Fixme: Implement texturing and vertex displacement
+	  */
+	std::string fs_src = "#version 130\n"
+		"uniform sampler2D color_texture;\n"
+		"in vec2 ex_texcoord;\n"
+		"out vec4 res_Color;\n"
+		"\n"
+		"void\n"
+		"main() {\n"
+		"    res_Color = texture2D(color_texture, ex_texcoord.xy);\n"
+		"}\n";
+
+	std::string vs_src = "#version 130\n"
+		"uniform sampler2D height_texture;\n"
+		"uniform mat4 projection;\n"
+		"uniform mat4 model;\n"
+		"uniform mat4 view;\n"
+		"uniform mat3 normal;\n"
+		"in  vec2 in_Position;\n"
+		"out vec2 ex_texcoord;\n"
+		"void\n"
+		"main() {\n"
+		"   float height = texture2D(height_texture, in_Position.xy).r;\n"
+		"   vec4 pos = vec4(in_Position.x, 0.2*height, in_Position.y, 1.0);\n"
+		"	gl_Position = projection * view * model * pos;\n"
+		"	ex_texcoord = in_Position;\n"
+		"}\n";
+
+	//Compile shaders, attach to program object, and link
+	GLuint vs = GlTools::compileShader(vs_src, GL_VERTEX_SHADER);
+	GLuint fs = GlTools::compileShader(fs_src, GL_FRAGMENT_SHADER);
+	program = glCreateProgram();
+	glAttachShader(program, vs);
+	glAttachShader(program, fs);
+	GlTools::linkProgram( program);
+
+	//Set uniforms for the program.
+	glUseProgram(program);
+	GLint projectionLocation = glGetUniformLocation(program, "projection");
+	assert(projectionLocation >= 0);
+	glUniformMatrix4fv(projectionLocation, 1, 0, glm::value_ptr(projection_matrix));
+
+	GLint viewLocation = glGetUniformLocation(program, "view");
+	assert(viewLocation >= 0);
+	glUniformMatrix4fv(viewLocation, 1, 0, glm::value_ptr(view_matrix));
+
+	GLint modelLocation = glGetUniformLocation(program, "model");
+	assert(modelLocation >= 0);
+	glUniformMatrix4fv(modelLocation, 1, 0, glm::value_ptr(model_matrix));
+	
+	GLint heightTexLocation = glGetUniformLocation(program, "height_texture");
+	assert(heightTexLocation >= 0);
+	glUniform1i(heightTexLocation, 0); //< 0 means GL_TEXTURE0
+	
+	GLint colorTexLocation = glGetUniformLocation(program, "color_texture");
+	assert(colorTexLocation >= 0);
+	glUniform1i(colorTexLocation, 1); //< 1 means GL_TEXTURE1
+	
+	glUseProgram(0);
+}
+
+void GameManager::createVAO() {
+	glGenVertexArrays(1, &vao);
+	glBindVertexArray(vao);
+	ASSERT_GL;
+
+	//Generate data
+	mesh = createTriangleStripMesh(100, 100);
+
+	//Generate VBO
+	glGenBuffers(1, &vertex_bo);
+	glBindBuffer(GL_ARRAY_BUFFER, vertex_bo);
+	glBufferData(GL_ARRAY_BUFFER, mesh.vertices.size()*sizeof(float), mesh.vertices.data(), GL_STATIC_DRAW);
+
+	//Generate IBO
+	glGenBuffers(1, &index_bo);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, index_bo);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, mesh.indices.size()*sizeof(unsigned int), mesh.indices.data(), GL_STATIC_DRAW);
+	
+	//Set input to the shader
+	GLint vertexAttribLocation = glGetAttribLocation(program, "in_Position");
+	assert(vertexAttribLocation >= 0);
+	glVertexAttribPointer(vertexAttribLocation, 2, GL_FLOAT, GL_FALSE, 0, 0);
+	glEnableVertexAttribArray(vertexAttribLocation);
+	ASSERT_GL;
+
+	//Unbind VBOs and VAO
+	glBindVertexArray(0);
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+	ASSERT_GL;
+}
+
+void GameManager::init() {
+	// Initialize SDL
+	if (SDL_Init(SDL_INIT_EVERYTHING) < 0) {
+		std::stringstream err;
+		err << "Could not initialize SDL: " << SDL_GetError();
+		throw std::runtime_error(err.str());
+	}
+	atexit( SDL_Quit);
+
+	createOpenGLContext();
+	setOpenGLStates();
+	createMatrices();
+	createSimpleProgram();
+	createVAO();
+	
+	//Initialize IL and ILU
+	ilInit();
+	iluInit();
+
+	//Get the textures from file and into an OpenGL texture
+	height_texture = loadTexture("ex05_height.bmp");
+	color_texture = loadTexture("ex05_tex.bmp");
+}
+
+void GameManager::render() {
+	//Clear screen, and set the correct program
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	glUseProgram(program);
+	
+	//Bind the textures before rendering
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, height_texture);
+	glActiveTexture(GL_TEXTURE1);
+	glBindTexture(GL_TEXTURE_2D, color_texture);
+
+	//Render geometry
+	glPrimitiveRestartIndex(mesh.restart_token);
+	glBindVertexArray(vao);
+	glDrawElements(GL_TRIANGLE_STRIP, mesh.indices.size(), GL_UNSIGNED_INT, BUFFER_OFFSET(0));
+	ASSERT_GL;
+
+	//Unbind the textures
+	glActiveTexture(GL_TEXTURE1);
+	glBindTexture(GL_TEXTURE_2D, 0);
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, 0);
+}
+
+void GameManager::play() {
+	bool doExit = false;
+
+	//SDL main loop
+	while (!doExit) {
+		SDL_Event event;
+		while (SDL_PollEvent(&event)) {// poll for pending events
+			switch (event.type) {
+			case SDL_KEYDOWN:
+				if (event.key.keysym.sym == SDLK_ESCAPE) //Esc
+					doExit = true;
+				if (event.key.keysym.sym == SDLK_q
+						&& event.key.keysym.mod & KMOD_CTRL) //Ctrl+q
+					doExit = true;
+				break;
+			case SDL_QUIT: //e.g., user clicks the upper right x
+				doExit = true;
+				break;
+			}
+		}
+
+		//Render, and swap front and back buffers
+		render();
+		SDL_GL_SwapBuffers();
+	}
+	quit();
+}
+
+void GameManager::quit() {
+	std::cout << "Bye bye..." << std::endl;
+}
+
+GameManager::TerrainMesh GameManager::createTriangleStripMesh(unsigned int nx, unsigned int ny) {
+	TerrainMesh mesh;
+	
+	//Set the restart token: this index will never appear in the mesh.indeces-vector, unless 
+	//it means reset, and start a new primitive (triangle strip)
+	mesh.restart_token = nx*ny*2+1;
+
+	/**
+	  * Fixme: Implement this function properly
+	  */
+	float dx = 1.0f/static_cast<float>(nx);
+	float dy = 1.0f/static_cast<float>(ny);
+
+	//Vertices
+	mesh.vertices.reserve((nx+1)*(ny+1));
+	for (int j=0; j<=ny; ++j) {
+		for (int i=0; i<=nx; ++i) {
+			mesh.vertices.push_back(i*dx);	//x
+			mesh.vertices.push_back(j*dy);	//y
+		}
+	}
+
+	//Indices
+	for (int j=0; j<ny; ++j) {
+		for (int i=0; i<=nx; ++i) {
+			mesh.indices.push_back(    j*(nx+1)+i);
+			mesh.indices.push_back((j+1)*(nx+1)+i);
+		}
+		//Finished with one triangle strip: restart
+		mesh.indices.push_back(mesh.restart_token); 
+	}
+
+	return mesh;
+}
+
+GameManager::TerrainMesh GameManager::createTriangleFanMesh(unsigned int nx, unsigned int ny) {
+	TerrainMesh mesh;
+
+	/**
+	  * Fixme: Implement this function
+	  */
+	
+	return mesh;
+}
+
+
+GLuint GameManager::loadTexture(std::string filename) {
+	std::vector<unsigned char> data;
+	ILuint ImageName;
+	unsigned int width, height;
+	GLuint texture;
+		
+	ilGenImages(1, &ImageName); // Grab a new image name.
+	ilBindImage(ImageName);
+
+	if (!ilLoadImage(filename.c_str())) {
+		ILenum e;
+		std::stringstream error;
+		while ((e = ilGetError()) != IL_NO_ERROR) {
+			error << e << ": " << iluErrorString(e) << std::endl;
+		}
+		ilDeleteImages(1, &ImageName); // Delete the image name. 
+		throw std::runtime_error(error.str());
+	}
+				
+	width = ilGetInteger(IL_IMAGE_WIDTH); // getting image width
+	height = ilGetInteger(IL_IMAGE_HEIGHT); // and height
+	data.resize(width*height*3);
+				
+	ilCopyPixels(0, 0, 0, width, height, 1, IL_RGB, IL_UNSIGNED_BYTE, data.data());
+	ilDeleteImages(1, &ImageName); // Delete the image name. 
+		
+	glGenTextures(1, &texture);
+	glBindTexture(GL_TEXTURE_2D, texture);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data.data());
+	glBindTexture(GL_TEXTURE_2D, 0);
+	ASSERT_GL;
+
+	return texture;
+}
