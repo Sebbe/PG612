@@ -67,6 +67,8 @@ public:
 	  */
 	void renderColorPass();
 
+	void screenshoot();
+
 protected:
 	/**
 	 * Creates the OpenGL context using SDL

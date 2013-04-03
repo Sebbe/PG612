@@ -214,6 +214,7 @@ void GameManager::init() {
 	light.projection = glm::perspective(90.0f, 1.0f, near_plane, far_plane);
 	light.view = glm::lookAt(light.position, glm::vec3(0), glm::vec3(0.0, 1.0, 0.0));
 
+	shadow_fbo.reset(new ShadowFBO(window_width, window_height));
 	//Create the random transformations and colors for the bunnys
 	srand(static_cast<int>(time(NULL)));
 	for (int i=0; i<n_models; ++i) {
@@ -230,6 +231,7 @@ void GameManager::init() {
 
 	//Create the programs we will use
 	phong_program.reset(new Program("shaders/phong.vert", "shaders/phong.geom", "shaders/phong.frag"));
+	shadow_program.reset(new Program("shaders/depth.vert", "shaders/depth.frag"));
 	CHECK_GL_ERRORS();
 
 	//Set uniforms for the programs
@@ -243,6 +245,7 @@ void GameManager::init() {
 	glBindVertexArray(vao[0]);
 	model->getVertices()->bind();
 	phong_program->setAttributePointer("position", 3);
+	shadow_program->setAttributePointer("position", 3);
 	model->getNormals()->bind();
 	phong_program->setAttributePointer("normal", 3);
 	model->getVertices()->unbind(); //Unbinds both vertices and normals
@@ -315,8 +318,59 @@ void GameManager::renderColorPass() {
 }
 
 void GameManager::renderShadowPass() {
-	//Render the scene from the light, with the lights projection, etc. into the shadow_fbo. Store only the depth values
-	//Remember to set the viewport, clearing the depth buffer, etc.
+
+        //Render the scene from the light, with the lights projection, etc. into the shadow_fbo. Store only the depth values
+        //Remember to set the viewport, clearing the depth buffer, etc.
+        glViewport(0, 0, window_width, window_height);
+        shadow_fbo->bind();
+ 
+        //Create the new view matrix that takes the trackball view into account
+        glm::mat4 view_matrix_new = light.view;
+       
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        shadow_program->use();
+ 
+        /**
+          * Render cube
+          */
+        {
+                glBindVertexArray(vao[1]);
+ 
+                glm::mat4 model_matrix = glm::scale(glm::mat4(1.0f), glm::vec3(cube_scale));
+                glm::mat4 model_matrix_inverse = glm::inverse(model_matrix);
+                glm::mat4 modelview_matrix = view_matrix_new*model_matrix;
+                glm::mat4 modelview_matrix_inverse = glm::inverse(modelview_matrix);
+                glm::mat4 modelviewprojection_matrix = light.projection*modelview_matrix;
+ 
+                glUniformMatrix4fv(shadow_program->getUniform("light_transform"), 1, 0, glm::value_ptr(modelviewprojection_matrix));
+ 
+                glDrawArrays(GL_TRIANGLES, 0, 36);
+        }
+ 
+        /**
+          * Render model
+          * Create modelview matrix and normal matrix and set as input
+          */
+        {
+                glBindVertexArray(vao[0]);
+                for (int i=0; i<n_models; ++i) {
+                        glm::mat4 model_matrix = model_matrices.at(i);
+                        glm::mat4 model_matrix_inverse = glm::inverse(model_matrix);
+                        glm::mat4 modelview_matrix = view_matrix_new*model_matrix;
+                        glm::mat4 modelview_matrix_inverse = glm::inverse(modelview_matrix);
+                        glm::mat4 modelviewprojection_matrix = light.projection*modelview_matrix;
+ 
+                        glUniformMatrix4fv(shadow_program->getUniform("light_transform"), 1, 0, glm::value_ptr(modelviewprojection_matrix));
+ 
+                        glDrawArrays(GL_TRIANGLES, 0, model->getNVertices());
+                }
+        }
+       
+        glBindVertexArray(0);
+
+
+ 
+        shadow_fbo->unbind();
 }
 
 void GameManager::render() {
@@ -328,6 +382,8 @@ void GameManager::render() {
 
 	renderShadowPass();
 	renderColorPass();
+	
+ 
 	
 	CHECK_GL_ERRORS();
 }
@@ -363,6 +419,9 @@ void GameManager::play() {
 				case SDLK_MINUS:
 					zoomOut();
 					break;
+				case SDLK_s:
+					screenshoot();
+					break;
 				}
 				break;
 			case SDL_QUIT: //e.g., user clicks the upper right x
@@ -392,4 +451,14 @@ void GameManager::zoomOut() {
 
 void GameManager::quit() {
 	std::cout << "Bye bye..." << std::endl;
+}
+
+void GameManager::screenshoot() {
+	std::vector<unsigned char> pixeldata;
+	pixeldata.resize(window_width*window_height*3);
+	glReadPixels(0, 0, window_width, window_height, GL_RGB, GL_UNSIGNED_BYTE, &pixeldata[0]);
+
+     ilEnable(IL_FILE_OVERWRITE);
+     ilTexImage(window_width, window_height, 1, 3, IL_RGB, IL_UNSIGNED_BYTE, pixeldata.data());
+     ilSaveImage("snapshot.png");
 }
