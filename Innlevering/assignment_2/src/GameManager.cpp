@@ -214,7 +214,7 @@ void GameManager::init() {
 	light.projection = glm::perspective(90.0f, 1.0f, near_plane, far_plane);
 	light.view = glm::lookAt(light.position, glm::vec3(0), glm::vec3(0.0, 1.0, 0.0));
 
-	shadow_fbo.reset(new ShadowFBO(window_width, window_height));
+	shadow_fbo.reset(new ShadowFBO(shadow_map_width, shadow_map_height));
 	//Create the random transformations and colors for the bunnys
 	srand(static_cast<int>(time(NULL)));
 	for (int i=0; i<n_models; ++i) {
@@ -237,6 +237,9 @@ void GameManager::init() {
 	//Set uniforms for the programs
 	//Typically diffuse_cubemap and shadowmap
 	phong_program->use();
+
+	//glUniform1i(phong_program->getUniform("depthTexture"), shadow_fbo->getTexture());
+	
 	phong_program->disuse();
 	CHECK_GL_ERRORS();
 	
@@ -245,7 +248,13 @@ void GameManager::init() {
 	glBindVertexArray(vao[0]);
 	model->getVertices()->bind();
 	phong_program->setAttributePointer("position", 3);
+
+
+	// riktig?
 	shadow_program->setAttributePointer("position", 3);
+	//
+
+
 	model->getNormals()->bind();
 	phong_program->setAttributePointer("normal", 3);
 	model->getVertices()->unbind(); //Unbinds both vertices and normals
@@ -272,10 +281,7 @@ void GameManager::renderColorPass() {
 	phong_program->use();
 	
 	//Bind shadow map and diffuse cube map
-
-	/**
-	  * Render cube
-	  */ 
+	
 	{
 		glBindVertexArray(vao[1]);
 
@@ -285,14 +291,23 @@ void GameManager::renderColorPass() {
 		glm::mat4 modelview_matrix_inverse = glm::inverse(modelview_matrix);
 		glm::mat4 modelviewprojection_matrix = camera.projection*modelview_matrix;
 		glm::vec3 light_pos = glm::mat3(model_matrix_inverse)*light.position/model_matrix_inverse[3].w;
-	
+
+		
+		glm::mat4 model_matrixl = glm::scale(glm::mat4(1.0f), glm::vec3(cube_scale));
+        glm::mat4 modelview_matrixl = light.view*model_matrixl;
+        glm::mat4 modelviewprojection_matrixl = light.projection*modelview_matrixl;
+
+		glUniformMatrix4fv(phong_program->getUniform("light_matrix"), 1, 0, glm::value_ptr(modelviewprojection_matrixl));
 		glUniform3fv(phong_program->getUniform("light_pos"), 1, glm::value_ptr(light_pos));
+
 		glUniform3fv(phong_program->getUniform("color"), 1, glm::value_ptr(glm::vec3(1.0f, 0.8f, 0.8f)));
+		glUniform1i(phong_program->getUniform("depthTexture"), shadow_fbo->getTexture());
 		glUniformMatrix4fv(phong_program->getUniform("modelviewprojection_matrix"), 1, 0, glm::value_ptr(modelviewprojection_matrix));
 		glUniformMatrix4fv(phong_program->getUniform("modelview_matrix_inverse"), 1, 0, glm::value_ptr(modelview_matrix_inverse));
-
+		
 		glDrawArrays(GL_TRIANGLES, 0, 36);
 	}
+
 
 	/**
 	  * Render model
@@ -367,9 +382,6 @@ void GameManager::renderShadowPass() {
         }
        
         glBindVertexArray(0);
-
-
- 
         shadow_fbo->unbind();
 }
 
