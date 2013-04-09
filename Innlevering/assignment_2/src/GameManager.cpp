@@ -297,11 +297,11 @@ void GameManager::renderColorPass() {
         glm::mat4 modelview_matrixl = light.view*model_matrixl;
         glm::mat4 modelviewprojection_matrixl = light.projection*modelview_matrixl;
 
-		glUniformMatrix4fv(phong_program->getUniform("light_matrix"), 1, 0, glm::value_ptr(modelviewprojection_matrixl));
+		//glUniformMatrix4fv(phong_program->getUniform("light_matrix"), 1, 0, glm::value_ptr(modelviewprojection_matrixl));
 		glUniform3fv(phong_program->getUniform("light_pos"), 1, glm::value_ptr(light_pos));
 
 		glUniform3fv(phong_program->getUniform("color"), 1, glm::value_ptr(glm::vec3(1.0f, 0.8f, 0.8f)));
-		glUniform1i(phong_program->getUniform("depthTexture"), shadow_fbo->getTexture());
+		//glUniform1i(phong_program->getUniform("depthTexture"), shadow_fbo->getTexture());
 		glUniformMatrix4fv(phong_program->getUniform("modelviewprojection_matrix"), 1, 0, glm::value_ptr(modelviewprojection_matrix));
 		glUniformMatrix4fv(phong_program->getUniform("modelview_matrix_inverse"), 1, 0, glm::value_ptr(modelview_matrix_inverse));
 		
@@ -468,9 +468,9 @@ void GameManager::quit() {
 void GameManager::screenshoot() {
 	std::vector<unsigned char> pixeldata;
 	pixeldata.resize(window_width*window_height*3);
-	glReadPixels(0, 0, window_width, window_height, GL_RGB, GL_UNSIGNED_BYTE, &pixeldata[0]);
+	glReadPixels(0, 0, window_width, window_height, GL_DEPTH_COMPONENT, GL_UNSIGNED_BYTE, &pixeldata[0]);
 
      ilEnable(IL_FILE_OVERWRITE);
      ilTexImage(window_width, window_height, 1, 3, IL_RGB, IL_UNSIGNED_BYTE, pixeldata.data());
-     ilSaveImage("snapshot.png");
+     ilSaveImage("snapshotDepth.png");
 }
