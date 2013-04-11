@@ -12,6 +12,7 @@ smooth out vec3 g_v;
 smooth out vec3 g_l;
 smooth out vec3 g_n;
 smooth out vec4 g_crd;
+
 //smooth out vec4 g_lightspace;
 //smooth out vec4 crd;
 

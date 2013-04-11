@@ -17,6 +17,7 @@
 #include "Model.h"
 #include "VirtualTrackball.h"
 #include "ShadowFBO.h"
+#include "CubeMap.h"
 
 /**
  * This class handles the game logic and display.
@@ -97,6 +98,7 @@ private:
 	
 	GLuint vao[2]; //< Vertex array objects
 	std::shared_ptr<GLUtils::Program> phong_program, wireframe_program, exploded_view_program, shadow_program;
+	std::shared_ptr<GLUtils::Program> useProgram;
 	std::shared_ptr<GLUtils::CubeMap> diffuse_cubemap;
 	std::shared_ptr<GLUtils::BO<GL_ARRAY_BUFFER> > cube_vertices, cube_normals;
 

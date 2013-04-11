@@ -79,5 +79,29 @@
     <None Include="shaders\depth.vert">
       <Filter>Resource Files</Filter>
     </None>
+    <None Include="shaders\hiden_line.vert">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="shaders\hidden_line.frag">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="shaders\wireframe.frag">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="shaders\wireframe.geom">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="shaders\wireframe.vert">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="shaders\cubemap.frag">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="shaders\cubemap.vert">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="shaders\hiden_line.geo">
+      <Filter>Resource Files</Filter>
+    </None>
   </ItemGroup>
 </Project>

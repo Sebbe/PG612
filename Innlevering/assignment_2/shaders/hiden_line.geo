@@ -15,7 +15,7 @@ smooth out vec3 f_l;
 smooth out vec4 crd;
 //smooth out vec4 f_lightspace;
 
-
+smooth out vec3 bary;
  
 void main() {
 	for(int i = 0; i < gl_in.length(); i++) {
@@ -23,6 +23,10 @@ void main() {
 		f_v = g_v[i];
 		f_l = g_l[i];
 		crd = g_crd[i];
+		if(i == 0) bary = vec3(1,0,0);
+		if(i == 1) bary = vec3(0,1,0);
+		if(i == 3) bary = vec3(0,0,1);
+
 		//f_lightspace = g_lightspace[i];
 		gl_Position =  gl_in[i].gl_Position;
 		EmitVertex();

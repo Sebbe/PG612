@@ -1,5 +1,6 @@
 #version 150
 
+uniform sampler2DShadow depthTexture;
 uniform mat4 modelviewprojection_matrix;
 uniform mat4 modelview_matrix_inverse;
 uniform mat4 light_matrix;

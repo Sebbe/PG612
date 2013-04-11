@@ -231,14 +231,17 @@ void GameManager::init() {
 
 	//Create the programs we will use
 	phong_program.reset(new Program("shaders/phong.vert", "shaders/phong.geom", "shaders/phong.frag"));
+	wireframe_program.reset(new Program("shaders/wireframe.vert", "shaders/wireframe.geom", "shaders/wireframe.frag"));
 	shadow_program.reset(new Program("shaders/depth.vert", "shaders/depth.frag"));
+	exploded_view_program.reset(new Program("shaders/hiden_line.vert", "shaders/hiden_line.geo", "shaders/hidden_line.frag"));
+	diffuse_cubemap.reset(new GLUtils::CubeMap("cubemaps/diffuse/", "jpg"));
 	CHECK_GL_ERRORS();
 
 	//Set uniforms for the programs
 	//Typically diffuse_cubemap and shadowmap
 	phong_program->use();
 
-	//glUniform1i(phong_program->getUniform("depthTexture"), shadow_fbo->getTexture());
+	//glUniform1i(phong_program->getUniform("depthTexture"), 0);
 	
 	phong_program->disuse();
 	CHECK_GL_ERRORS();
@@ -248,7 +251,8 @@ void GameManager::init() {
 	glBindVertexArray(vao[0]);
 	model->getVertices()->bind();
 	phong_program->setAttributePointer("position", 3);
-
+	wireframe_program->setAttributePointer("position", 3);
+	exploded_view_program->setAttributePointer("position", 3);
 
 	// riktig?
 	shadow_program->setAttributePointer("position", 3);
@@ -257,17 +261,25 @@ void GameManager::init() {
 
 	model->getNormals()->bind();
 	phong_program->setAttributePointer("normal", 3);
+	wireframe_program->setAttributePointer("normal", 3);
+	exploded_view_program->setAttributePointer("normal", 3);
 	model->getVertices()->unbind(); //Unbinds both vertices and normals
 	glBindVertexArray(0);
 	
 	glBindVertexArray(vao[1]);
 	cube_vertices->bind();
 	phong_program->setAttributePointer("position", 3);
+	wireframe_program->setAttributePointer("position", 3);
+	exploded_view_program->setAttributePointer("position", 3);
 	cube_normals->bind();
 	phong_program->setAttributePointer("normal", 3);
+	wireframe_program->setAttributePointer("normal", 3);
+	exploded_view_program->setAttributePointer("normal", 3);
 	model->getVertices()->unbind(); //Unbinds both vertices and normals
 	glBindVertexArray(0);
 	CHECK_GL_ERRORS();
+
+	useProgram = phong_program;
 }
 
 void GameManager::renderColorPass() {
@@ -281,7 +293,7 @@ void GameManager::renderColorPass() {
 	phong_program->use();
 	
 	//Bind shadow map and diffuse cube map
-	
+	diffuse_cubemap->bindTexture();
 	{
 		glBindVertexArray(vao[1]);
 
@@ -307,7 +319,9 @@ void GameManager::renderColorPass() {
 		
 		glDrawArrays(GL_TRIANGLES, 0, 36);
 	}
-
+	diffuse_cubemap->unbindTexture();
+	phong_program->disuse();
+	useProgram->use();
 
 	/**
 	  * Render model
@@ -322,11 +336,11 @@ void GameManager::renderColorPass() {
 		glm::mat4 modelviewprojection_matrix = camera.projection*modelview_matrix;
 		glm::vec3 light_pos = glm::mat3(model_matrix_inverse)*light.position/model_matrix_inverse[3].w;
 	
-		glUniform3fv(phong_program->getUniform("light_pos"), 1, glm::value_ptr(light_pos));
-		glUniform3fv(phong_program->getUniform("color"), 1, glm::value_ptr(model_colors.at(i)));
-		glUniformMatrix4fv(phong_program->getUniform("modelviewprojection_matrix"), 1, 0, glm::value_ptr(modelviewprojection_matrix));
-		glUniformMatrix4fv(phong_program->getUniform("modelview_matrix_inverse"), 1, 0, glm::value_ptr(modelview_matrix_inverse));
-
+		glUniform3fv(useProgram->getUniform("light_pos"), 1, glm::value_ptr(light_pos));
+		glUniform3fv(useProgram->getUniform("color"), 1, glm::value_ptr(model_colors.at(i)));
+		glUniformMatrix4fv(useProgram->getUniform("modelviewprojection_matrix"), 1, 0, glm::value_ptr(modelviewprojection_matrix));
+		glUniformMatrix4fv(useProgram->getUniform("modelview_matrix_inverse"), 1, 0, glm::value_ptr(modelview_matrix_inverse));
+		
 		glDrawArrays(GL_TRIANGLES, 0, model->getNVertices());
 	}
 	glBindVertexArray(0);
@@ -430,6 +444,15 @@ void GameManager::play() {
 					break;
 				case SDLK_MINUS:
 					zoomOut();
+					break;
+				case SDLK_1:
+					useProgram = phong_program;
+					break;
+				case SDLK_2:
+					useProgram = wireframe_program;
+					break;
+				case SDLK_3:
+					useProgram = exploded_view_program;
 					break;
 				case SDLK_s:
 					screenshoot();

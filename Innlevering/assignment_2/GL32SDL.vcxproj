@@ -29,11 +29,19 @@
     <ClCompile Include="src\VirtualTrackball.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="shaders\cubemap.frag" />
+    <None Include="shaders\cubemap.vert" />
     <None Include="shaders\depth.frag" />
     <None Include="shaders\depth.vert" />
+    <None Include="shaders\hidden_line.frag" />
+    <None Include="shaders\hiden_line.geo" />
+    <None Include="shaders\hiden_line.vert" />
     <None Include="shaders\phong.frag" />
     <None Include="shaders\phong.geom" />
     <None Include="shaders\phong.vert" />
+    <None Include="shaders\wireframe.frag" />
+    <None Include="shaders\wireframe.geom" />
+    <None Include="shaders\wireframe.vert" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{0EB6082A-7B48-4E60-B4B3-2EB3C7254AC1}</ProjectGuid>
