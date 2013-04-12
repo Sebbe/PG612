@@ -1,15 +1,14 @@
 #version 150
 
-uniform sampler2DShadow depthTexture;
+uniform sampler2D depthTexture;
 uniform vec3 color;
 smooth in vec3 f_n;
 smooth in vec3 f_v;
 smooth in vec3 f_l;
 smooth in vec4 crd;
-//smooth in vec4 f_lightspace;
-//smooth in vec4 crd;
-//in vec3 crd;
-out vec4 out_color;
+smooth in vec3 bary;
+
+out vec4 glFragColor;
 
 float amplify(float d, float scale, float offset) {
 	d = scale * d + offset;
@@ -25,8 +24,23 @@ void main() {
 	
     float diff = max(0.0f, dot(n, l));
     float spec = pow(max(0.0f, dot(n, h)), 128.0f);
-	
-	
 
-	out_color = vec4(diff*color + spec, 1.0);
+	vec3 colorUse;
+	bool shadow = false;
+
+	if (crd.x >= 0 && crd.x < crd.w && crd.y >= 0 && crd.y < crd.w)
+		shadow = (textureProj(depthTexture, crd).r > crd.z/crd.w);
+
+	/** Mest sansynlig en fortegns feil et sted **/
+    if(!shadow) {
+		colorUse = (diff*color + spec) * 0.5;
+	} else {
+		colorUse = diff*color + spec;
+	}
+	 //E.g., phong shading;
+	float k = min(bary[0],min(bary[1],bary[2])); //minimum of barycentric coordinate
+	colorUse = amplify(k, 40, -0.5)*colorUse;
+
+	
+	glFragColor = vec4(colorUse, 1.0);
 }

@@ -241,7 +241,7 @@ void GameManager::init() {
 	//Typically diffuse_cubemap and shadowmap
 	phong_program->use();
 
-	//glUniform1i(phong_program->getUniform("depthTexture"), 0);
+	glUniform1i(phong_program->getUniform("depthTexture"), 0);
 	
 	phong_program->disuse();
 	CHECK_GL_ERRORS();
@@ -255,7 +255,7 @@ void GameManager::init() {
 	exploded_view_program->setAttributePointer("position", 3);
 
 	// riktig?
-	shadow_program->setAttributePointer("position", 3);
+	//shadow_program->setAttributePointer("position", 3);
 	//
 
 
@@ -291,12 +291,15 @@ void GameManager::renderColorPass() {
 	
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	phong_program->use();
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, shadow_fbo->getTexture());
 	
 	//Bind shadow map and diffuse cube map
-	diffuse_cubemap->bindTexture();
+	//diffuse_cubemap->bindTexture();
 	{
 		glBindVertexArray(vao[1]);
 
+		/** lager matriser **/
 		glm::mat4 model_matrix = glm::scale(glm::mat4(1.0f), glm::vec3(cube_scale));
 		glm::mat4 model_matrix_inverse = glm::inverse(model_matrix);
 		glm::mat4 modelview_matrix = view_matrix_new*model_matrix;
@@ -304,23 +307,23 @@ void GameManager::renderColorPass() {
 		glm::mat4 modelviewprojection_matrix = camera.projection*modelview_matrix;
 		glm::vec3 light_pos = glm::mat3(model_matrix_inverse)*light.position/model_matrix_inverse[3].w;
 
-		
-		glm::mat4 model_matrixl = glm::scale(glm::mat4(1.0f), glm::vec3(cube_scale));
-        glm::mat4 modelview_matrixl = light.view*model_matrixl;
+		/** Lager light matrise for å sende inn til shader **/
+        glm::mat4 modelview_matrixl = light.view*model_matrix;
         glm::mat4 modelviewprojection_matrixl = light.projection*modelview_matrixl;
+		glUniformMatrix4fv(phong_program->getUniform("light_matrix"), 1, 0, glm::value_ptr(modelviewprojection_matrixl));
 
-		//glUniformMatrix4fv(phong_program->getUniform("light_matrix"), 1, 0, glm::value_ptr(modelviewprojection_matrixl));
+		/**  **/
 		glUniform3fv(phong_program->getUniform("light_pos"), 1, glm::value_ptr(light_pos));
-
 		glUniform3fv(phong_program->getUniform("color"), 1, glm::value_ptr(glm::vec3(1.0f, 0.8f, 0.8f)));
-		//glUniform1i(phong_program->getUniform("depthTexture"), shadow_fbo->getTexture());
 		glUniformMatrix4fv(phong_program->getUniform("modelviewprojection_matrix"), 1, 0, glm::value_ptr(modelviewprojection_matrix));
 		glUniformMatrix4fv(phong_program->getUniform("modelview_matrix_inverse"), 1, 0, glm::value_ptr(modelview_matrix_inverse));
 		
 		glDrawArrays(GL_TRIANGLES, 0, 36);
 	}
-	diffuse_cubemap->unbindTexture();
+	//diffuse_cubemap->unbindTexture();
+	/**sier vi er ferdig med phong program **/
 	phong_program->disuse();
+	/** sier at vi skal bruke gjeldene program (wireframe, phong, eller hidden line) **/
 	useProgram->use();
 
 	/**
@@ -341,6 +344,11 @@ void GameManager::renderColorPass() {
 		glUniformMatrix4fv(useProgram->getUniform("modelviewprojection_matrix"), 1, 0, glm::value_ptr(modelviewprojection_matrix));
 		glUniformMatrix4fv(useProgram->getUniform("modelview_matrix_inverse"), 1, 0, glm::value_ptr(modelview_matrix_inverse));
 		
+		/** lager lys matrise og sender inn til shader **/
+        glm::mat4 modelview_matrixl = light.view*model_matrix;
+        glm::mat4 modelviewprojection_matrixl = light.projection*modelview_matrixl;
+		glUniformMatrix4fv(useProgram->getUniform("light_matrix"), 1, 0, glm::value_ptr(modelviewprojection_matrixl));
+
 		glDrawArrays(GL_TRIANGLES, 0, model->getNVertices());
 	}
 	glBindVertexArray(0);

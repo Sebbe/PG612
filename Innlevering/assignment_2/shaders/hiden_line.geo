@@ -25,7 +25,7 @@ void main() {
 		crd = g_crd[i];
 		if(i == 0) bary = vec3(1,0,0);
 		if(i == 1) bary = vec3(0,1,0);
-		if(i == 3) bary = vec3(0,0,1);
+		if(i == 2) bary = vec3(0,0,1);
 
 		//f_lightspace = g_lightspace[i];
 		gl_Position =  gl_in[i].gl_Position;
