@@ -236,7 +236,7 @@ void GameManager::init() {
 	exploded_view_program.reset(new Program("shaders/hiden_line.vert", "shaders/hiden_line.geo", "shaders/hidden_line.frag"));
 	diffuse_cubemap.reset(new GLUtils::CubeMap("cubemaps/diffuse/", "jpg"));
 	
-	//shadow_program->setAttributePointer("position", 3, GL_FLOAT, GL_FALSE, 0, &light.position);
+	shadow_program->setAttributePointer("position", 3, GL_FLOAT, GL_FALSE, 0, &light.position);
 	CHECK_GL_ERRORS();
 
 	//Set uniforms for the programs
@@ -255,7 +255,7 @@ void GameManager::init() {
 	model->getVertices()->bind();
 	phong_program->setAttributePointer("position", 3);
 	wireframe_program->setAttributePointer("position", 3);
-	//exploded_view_program->setAttributePointer("position", 3);
+	exploded_view_program->setAttributePointer("position", 3);
 
 	// riktig?
 	//shadow_program->setAttributePointer("position", 3);
@@ -304,16 +304,10 @@ void GameManager::renderColorPass() {
 	glBindTexture(GL_TEXTURE_2D, shadow_fbo->getTexture());
 	diffuse_cubemap->bindTexture(GL_TEXTURE1);
 
-	//Bind shadow map and diffuse cube map
-	//diffuse_cubemap->bindTexture();
+	// render cube
 	{
+		
 		glBindVertexArray(vao[1]);
-
-		glm::mat4 transform = camera.view*cam_trackball.getTransform();
-	
-		transform[3][0] = 0;
-		transform[3][1] = 0;
-		transform[3][2] = 0;
 
 		/** lager matriser **/
 		glm::mat4 model_matrix = glm::scale(glm::mat4(1.0f), glm::vec3(cube_scale));
@@ -323,13 +317,13 @@ void GameManager::renderColorPass() {
 		glm::mat4 modelviewprojection_matrix = camera.projection*modelview_matrix;
 		glm::vec3 light_pos = glm::mat3(model_matrix_inverse)*light.position/model_matrix_inverse[3].w;
 
-		/** for cube map **/
-		transform = camera.projection*transform;
-		//glUniformMatrix4fv(phong_program->getUniform("transform"), 1, 0, glm::value_ptr(transform));
-		
 			/** Lager light matrise for å sende inn til shader **/
-		glm::mat4 modelview_matrixl = light.view*model_matrix;
-		glm::mat4 modelviewprojection_matrixl = light.projection*modelview_matrixl;
+		glm::mat4 model_matrixl = glm::scale(glm::mat4(1.0f), glm::vec3(cube_scale));
+        glm::mat4 model_matrix_inversel = glm::inverse(model_matrixl);
+        glm::mat4 modelview_matrixl = light.view*model_matrixl;
+        glm::mat4 modelview_matrix_inversel = glm::inverse(modelview_matrixl);
+        glm::mat4 modelviewprojection_matrixl = light.projection*modelview_matrixl;
+ 
 		glUniformMatrix4fv(phong_program->getUniform("light_matrix"), 1, 0, glm::value_ptr(modelviewprojection_matrixl));
 
 			/**  **/
@@ -343,7 +337,7 @@ void GameManager::renderColorPass() {
 
 	/**sier vi er ferdig med phong program **/	
 	phong_program->disuse();
-	diffuse_cubemap->unbindTexture();
+	
 
 	/** sier at vi skal bruke gjeldene program (wireframe, phong, eller hidden line) **/
 	useProgram->use();
@@ -373,6 +367,7 @@ void GameManager::renderColorPass() {
 
 		glDrawArrays(GL_TRIANGLES, 0, model->getNVertices());
 	}
+	diffuse_cubemap->unbindTexture();
 	glBindVertexArray(0);
 }
 
@@ -426,16 +421,21 @@ void GameManager::renderShadowPass() {
         }
        
         glBindVertexArray(0);
+
+		
         shadow_fbo->unbind();
 }
 
 void GameManager::render() {
 	//Rotate the light a bit
 	float elapsed = static_cast<float>(my_timer.elapsedAndRestart());
-	glm::mat4 rotation = glm::rotate(elapsed*10.f, 0.0f, 1.0f, 0.0f);
-	light.position = glm::mat3(rotation)*light.position;
-	light.view = glm::lookAt(light.position,  glm::vec3(0), glm::vec3(0.0, 1.0, 0.0));
+	if(rotateLight) {
+		glm::mat4 rotation = glm::rotate(elapsed*10.f, 0.0f, 1.0f, 0.0f);
+		light.position = glm::mat3(rotation)*light.position;
+	}
 
+	light.view = glm::lookAt(light.position,  glm::vec3(0), glm::vec3(0.0, 1.0, 0.0));
+	//camera.view = light.view;
 	renderShadowPass();
 	renderColorPass();
 	

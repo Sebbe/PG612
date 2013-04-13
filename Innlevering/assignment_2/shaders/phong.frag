@@ -19,17 +19,23 @@ void main() {
     vec3 n = normalize(f_n);
 	vec3 tex_coord = reflect(-f_v, f_n);
 	
-    vec3 diff = texture(my_cube, tex_coord).xyz;
+    vec3 diff = vec3(texture(my_cube, tex_coord));
     float spec = pow(max(0.0f, dot(n, h)), 128.0f);
 	
+	/*
 	bool shadow = false;
 	 if (crd.x >= 0 && crd.x < crd.w && crd.y >= 0 && crd.y < crd.w)
 		shadow = (textureProj(depthTexture, crd).r > crd.z/crd.w);
-	
+	*/
+	float shadow = textureProj(depthTexture, crd).p;
+	shadow = shadow * 0.25 + 0.75;
+	out_color = vec4(shadow * color.rgb * diff + spec, 1);
 	/** Mest sansynlig en fortegns feil et sted **/
-    if(!shadow) {
+    /*if(!shadow) {
 		out_color = vec4((diff*color + spec) * 0.2, 1.0);
 	} else {
 		out_color = vec4(diff*color + spec, 1.0);
-	}
+	}*/
+
+	//out_color = vec4(diff*color + spec, 1.0) * shadow;
 }

@@ -107,6 +107,7 @@ private:
 
 	Timer my_timer; //< Timer for machine independent motion
 	float zoom; //< Zoom factor
+	bool rotateLight; // if the light should be rotatet or not
 	struct {
 		glm::vec3 position; //< Light position for shading etc
 		glm::mat4 projection;
