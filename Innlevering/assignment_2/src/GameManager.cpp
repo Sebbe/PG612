@@ -202,9 +202,6 @@ void GameManager::init() {
 	ilInit();
 	iluInit();
 
-	/** Init the bool for cubemap or not **/
-	useCubemap = true;
-
 	//Initialize the different stuff we need
 	model.reset(new Model("models/bunny.obj", false));
 	cube_vertices.reset(new BO<GL_ARRAY_BUFFER>(cube_vertices_data, sizeof(cube_vertices_data)));
@@ -238,22 +235,17 @@ void GameManager::init() {
 	shadow_program.reset(new Program("shaders/depth.vert", "shaders/depth.frag"));
 	exploded_view_program.reset(new Program("shaders/hiden_line.vert", "shaders/hiden_line.geo", "shaders/hidden_line.frag"));
 	diffuse_cubemap.reset(new GLUtils::CubeMap("cubemaps/diffuse/", "jpg"));
-	cubemap_program.reset(new Program("shaders/phong_cube.vert", "shaders/phong_cube.frag"));
+	
 	//shadow_program->setAttributePointer("position", 3, GL_FLOAT, GL_FALSE, 0, &light.position);
 	CHECK_GL_ERRORS();
 
 	//Set uniforms for the programs
 	//Typically diffuse_cubemap and shadowmap
 
-	cubemap_program->use();
-		//glUniform1i(phong_program->getUniform("depthTexture"), 0);
-		glUniform1i(cubemap_program->getUniform("my_cube"), 1);
-	cubemap_program->disuse();
 
 	phong_program->use();
-
 		glUniform1i(phong_program->getUniform("depthTexture"), 0);
-	
+		glUniform1i(phong_program->getUniform("my_cube"), 1);
 	phong_program->disuse();
 	CHECK_GL_ERRORS();
 	
@@ -274,19 +266,22 @@ void GameManager::init() {
 	phong_program->setAttributePointer("normal", 3);
 	wireframe_program->setAttributePointer("normal", 3);
 	exploded_view_program->setAttributePointer("normal", 3);
+
 	model->getVertices()->unbind(); //Unbinds both vertices and normals
 	glBindVertexArray(0);
 	
 	glBindVertexArray(vao[1]);
+	
 	cube_vertices->bind();
-
 	phong_program->setAttributePointer("position", 3);
 	wireframe_program->setAttributePointer("position", 3);
 	exploded_view_program->setAttributePointer("position", 3);
+	
 	cube_normals->bind();
 	phong_program->setAttributePointer("normal", 3);
 	wireframe_program->setAttributePointer("normal", 3);
 	exploded_view_program->setAttributePointer("normal", 3);
+
 	model->getVertices()->unbind(); //Unbinds both vertices and normals
 	glBindVertexArray(0);
 	CHECK_GL_ERRORS();
@@ -302,13 +297,12 @@ void GameManager::renderColorPass() {
 	glm::mat4 view_matrix_new = camera.view*cam_trackball.getTransform();
 	
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-	if(!useCubemap)
-		phong_program->use();
-	else
-		cubemap_program->use();
+	
+	phong_program->use();
+	
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, shadow_fbo->getTexture());
-	if(useCubemap) diffuse_cubemap->bindTexture(GL_TEXTURE1);
+	diffuse_cubemap->bindTexture(GL_TEXTURE1);
 
 	//Bind shadow map and diffuse cube map
 	//diffuse_cubemap->bindTexture();
@@ -329,31 +323,27 @@ void GameManager::renderColorPass() {
 		glm::mat4 modelviewprojection_matrix = camera.projection*modelview_matrix;
 		glm::vec3 light_pos = glm::mat3(model_matrix_inverse)*light.position/model_matrix_inverse[3].w;
 
-		if(useCubemap) {
-			transform = camera.projection*transform;
-			glUniformMatrix4fv(cubemap_program->getUniform("transform"), 1, 0, glm::value_ptr(transform));
-		} else {
+		/** for cube map **/
+		transform = camera.projection*transform;
+		//glUniformMatrix4fv(phong_program->getUniform("transform"), 1, 0, glm::value_ptr(transform));
+		
 			/** Lager light matrise for å sende inn til shader **/
-			glm::mat4 modelview_matrixl = light.view*model_matrix;
-			glm::mat4 modelviewprojection_matrixl = light.projection*modelview_matrixl;
-			glUniformMatrix4fv(phong_program->getUniform("light_matrix"), 1, 0, glm::value_ptr(modelviewprojection_matrixl));
+		glm::mat4 modelview_matrixl = light.view*model_matrix;
+		glm::mat4 modelviewprojection_matrixl = light.projection*modelview_matrixl;
+		glUniformMatrix4fv(phong_program->getUniform("light_matrix"), 1, 0, glm::value_ptr(modelviewprojection_matrixl));
 
 			/**  **/
-			glUniform3fv(phong_program->getUniform("light_pos"), 1, glm::value_ptr(light_pos));
-			glUniform3fv(phong_program->getUniform("color"), 1, glm::value_ptr(glm::vec3(1.0f, 0.8f, 0.8f)));
-			glUniformMatrix4fv(phong_program->getUniform("modelviewprojection_matrix"), 1, 0, glm::value_ptr(modelviewprojection_matrix));
-			glUniformMatrix4fv(phong_program->getUniform("modelview_matrix_inverse"), 1, 0, glm::value_ptr(modelview_matrix_inverse));
-		}
+		glUniform3fv(phong_program->getUniform("light_pos"), 1, glm::value_ptr(light_pos));
+		glUniform3fv(phong_program->getUniform("color"), 1, glm::value_ptr(glm::vec3(1.0f, 0.8f, 0.8f)));
+		glUniformMatrix4fv(phong_program->getUniform("modelviewprojection_matrix"), 1, 0, glm::value_ptr(modelviewprojection_matrix));
+		glUniformMatrix4fv(phong_program->getUniform("modelview_matrix_inverse"), 1, 0, glm::value_ptr(modelview_matrix_inverse));
+
 		glDrawArrays(GL_TRIANGLES, 0, 36);
 	}
-	//diffuse_cubemap->unbindTexture();
-	/**sier vi er ferdig med phong program **/
-	if(!useCubemap) {
-		phong_program->disuse();
-	} else {
-		diffuse_cubemap->unbindTexture();
-		cubemap_program->disuse();
-	}
+
+	/**sier vi er ferdig med phong program **/	
+	phong_program->disuse();
+	diffuse_cubemap->unbindTexture();
 
 	/** sier at vi skal bruke gjeldene program (wireframe, phong, eller hidden line) **/
 	useProgram->use();
@@ -531,9 +521,10 @@ void GameManager::quit() {
 void GameManager::screenshoot() {
 	std::vector<unsigned char> pixeldata;
 	pixeldata.resize(window_width*window_height*3);
-	glReadPixels(0, 0, window_width, window_height, GL_DEPTH_COMPONENT, GL_UNSIGNED_BYTE, &pixeldata[0]);
+	glReadPixels(0, 0, window_width, window_height, GL_RGB, GL_UNSIGNED_BYTE, &pixeldata[0]);
 
-     ilEnable(IL_FILE_OVERWRITE);
-     ilTexImage(window_width, window_height, 1, 3, IL_RGB, IL_UNSIGNED_BYTE, pixeldata.data());
-     ilSaveImage("snapshotDepth.png");
+    ilEnable(IL_FILE_OVERWRITE);
+    ilTexImage(window_width, window_height, 1, 3, IL_RGB, IL_UNSIGNED_BYTE, pixeldata.data());
+    ilSaveImage("snapshot.png");
+
 }

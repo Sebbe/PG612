@@ -107,7 +107,6 @@ private:
 
 	Timer my_timer; //< Timer for machine independent motion
 	float zoom; //< Zoom factor
-	bool useCubemap;
 	struct {
 		glm::vec3 position; //< Light position for shading etc
 		glm::mat4 projection;
