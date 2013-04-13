@@ -94,13 +94,16 @@
     <None Include="shaders\wireframe.vert">
       <Filter>Resource Files</Filter>
     </None>
-    <None Include="shaders\cubemap.frag">
-      <Filter>Resource Files</Filter>
-    </None>
-    <None Include="shaders\cubemap.vert">
-      <Filter>Resource Files</Filter>
-    </None>
     <None Include="shaders\hiden_line.geo">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="shaders\phong_diffuse.geom">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="shaders\phong_diffuse.vert">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="shaders\phong_diffuse.frag">
       <Filter>Resource Files</Filter>
     </None>
   </ItemGroup>

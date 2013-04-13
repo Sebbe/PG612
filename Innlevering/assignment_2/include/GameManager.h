@@ -97,8 +97,8 @@ private:
 	void zoomOut();
 	
 	GLuint vao[2]; //< Vertex array objects
-	std::shared_ptr<GLUtils::Program> phong_program, wireframe_program, exploded_view_program, shadow_program;
-	std::shared_ptr<GLUtils::Program> useProgram, cubemap_program;
+	std::shared_ptr<GLUtils::Program> phong_program, wireframe_program, exploded_view_program, shadow_program, phong_diffuse_program;
+	std::shared_ptr<GLUtils::Program> useProgram;
 	std::shared_ptr<GLUtils::CubeMap> diffuse_cubemap;
 	std::shared_ptr<GLUtils::BO<GL_ARRAY_BUFFER> > cube_vertices, cube_normals;
 
@@ -108,6 +108,7 @@ private:
 	Timer my_timer; //< Timer for machine independent motion
 	float zoom; //< Zoom factor
 	bool rotateLight; // if the light should be rotatet or not
+	bool useDiffuse;
 	struct {
 		glm::vec3 position; //< Light position for shading etc
 		glm::mat4 projection;
@@ -118,6 +119,7 @@ private:
 		glm::mat4 projection;
 		glm::mat4 view;
 	} camera;
+
 
 	
 	std::vector<glm::mat4> model_matrices; //< OpenGL model transformation matrix

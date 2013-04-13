@@ -13,18 +13,15 @@ smooth out vec3 g_v;
 smooth out vec3 g_l;
 smooth out vec3 g_n;
 smooth out vec4 g_crd;
-//smooth out vec4 g_lightspace;
-//smooth out vec4 crd;
 
 //out vec3 crd;
 void main() {
 	mat4 t = mat4(
-	0.5, 0.0, 0.0, 0.5,
-	0.0, 0.5, 0.0, 0.5,
-	0.0, 0.0, 0.5, 0.5,
-	0.0, 0.0, 0.0, 1.0);
+	0.5, 0.0, 0.0, 0.0,
+	0.0, 0.5, 0.0, 0.0,
+	0.0, 0.0, 0.5 * 1.01, 0.0,
+	0.5, 0.5, 0.5 - 0.01, 1.0);
 
-	//crd = position;
 	g_crd = t*light_matrix*vec4(position, 1.0);
 
 	float homogeneous_divide = (1.0f/modelview_matrix_inverse[3].w);

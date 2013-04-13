@@ -207,6 +207,10 @@ void GameManager::init() {
 	cube_vertices.reset(new BO<GL_ARRAY_BUFFER>(cube_vertices_data, sizeof(cube_vertices_data)));
 	cube_normals.reset(new BO<GL_ARRAY_BUFFER>(cube_normals_data, sizeof(cube_normals_data)));
 	
+	/** if the light should rotate **/
+	rotateLight = true;
+	/** if to use the diffuse cube map **/
+	useDiffuse = true;
 	//Set the matrices we will use
 	camera.projection = glm::perspective(fovy/zoom,
 			window_width / (float) window_height, near_plane, far_plane);
@@ -231,22 +235,27 @@ void GameManager::init() {
 
 	//Create the programs we will use
 	phong_program.reset(new Program("shaders/phong.vert", "shaders/phong.geom", "shaders/phong.frag"));
+	phong_diffuse_program.reset(new Program("shaders/phong_diffuse.vert", "shaders/phong_diffuse.geom", "shaders/phong_diffuse.frag"));
 	wireframe_program.reset(new Program("shaders/wireframe.vert", "shaders/wireframe.geom", "shaders/wireframe.frag"));
 	shadow_program.reset(new Program("shaders/depth.vert", "shaders/depth.frag"));
 	exploded_view_program.reset(new Program("shaders/hiden_line.vert", "shaders/hiden_line.geo", "shaders/hidden_line.frag"));
 	diffuse_cubemap.reset(new GLUtils::CubeMap("cubemaps/diffuse/", "jpg"));
 	
-	shadow_program->setAttributePointer("position", 3, GL_FLOAT, GL_FALSE, 0, &light.position);
 	CHECK_GL_ERRORS();
 
 	//Set uniforms for the programs
 	//Typically diffuse_cubemap and shadowmap
 
-
 	phong_program->use();
 		glUniform1i(phong_program->getUniform("depthTexture"), 0);
-		glUniform1i(phong_program->getUniform("my_cube"), 1);
 	phong_program->disuse();
+
+	phong_diffuse_program->use();
+		glUniform1i(phong_diffuse_program->getUniform("depthTexture"), 0);
+		glUniform1i(phong_diffuse_program->getUniform("my_cube"), 1);
+	phong_diffuse_program->disuse();
+
+
 	CHECK_GL_ERRORS();
 	
 	//Set up VAOs and set as input to shaders
@@ -254,16 +263,15 @@ void GameManager::init() {
 	glBindVertexArray(vao[0]);
 	model->getVertices()->bind();
 	phong_program->setAttributePointer("position", 3);
+	phong_diffuse_program->setAttributePointer("position", 3);
 	wireframe_program->setAttributePointer("position", 3);
 	exploded_view_program->setAttributePointer("position", 3);
-
-	// riktig?
-	//shadow_program->setAttributePointer("position", 3);
-	//
+	shadow_program->setAttributePointer("position", 3);
 
 
 	model->getNormals()->bind();
 	phong_program->setAttributePointer("normal", 3);
+	phong_diffuse_program->setAttributePointer("normal", 3);
 	wireframe_program->setAttributePointer("normal", 3);
 	exploded_view_program->setAttributePointer("normal", 3);
 
@@ -276,11 +284,13 @@ void GameManager::init() {
 	phong_program->setAttributePointer("position", 3);
 	wireframe_program->setAttributePointer("position", 3);
 	exploded_view_program->setAttributePointer("position", 3);
+	phong_diffuse_program->setAttributePointer("position", 3);
 	
 	cube_normals->bind();
 	phong_program->setAttributePointer("normal", 3);
 	wireframe_program->setAttributePointer("normal", 3);
 	exploded_view_program->setAttributePointer("normal", 3);
+	phong_diffuse_program->setAttributePointer("normal", 3);
 
 	model->getVertices()->unbind(); //Unbinds both vertices and normals
 	glBindVertexArray(0);
@@ -298,11 +308,14 @@ void GameManager::renderColorPass() {
 	
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	
-	phong_program->use();
-	
+	if(useDiffuse)
+		phong_diffuse_program->use();
+	else
+		phong_program->use();
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, shadow_fbo->getTexture());
-	diffuse_cubemap->bindTexture(GL_TEXTURE1);
+	if(useDiffuse)
+		diffuse_cubemap->bindTexture(GL_TEXTURE1);
 
 	// render cube
 	{
@@ -336,7 +349,10 @@ void GameManager::renderColorPass() {
 	}
 
 	/**sier vi er ferdig med phong program **/	
-	phong_program->disuse();
+	if(useDiffuse)
+		phong_diffuse_program->disuse();
+	else
+		phong_program->disuse();
 	
 
 	/** sier at vi skal bruke gjeldene program (wireframe, phong, eller hidden line) **/
@@ -367,7 +383,8 @@ void GameManager::renderColorPass() {
 
 		glDrawArrays(GL_TRIANGLES, 0, model->getNVertices());
 	}
-	diffuse_cubemap->unbindTexture();
+	if(useDiffuse)
+		diffuse_cubemap->unbindTexture();
 	glBindVertexArray(0);
 }
 
@@ -378,7 +395,7 @@ void GameManager::renderShadowPass() {
         glViewport(0, 0, window_width, window_height);
         shadow_fbo->bind();
  
-        //Create the new view matrix that takes the trackball view into account
+        //Create the new view matrix
         glm::mat4 view_matrix_new = light.view;
        
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -421,8 +438,6 @@ void GameManager::renderShadowPass() {
         }
        
         glBindVertexArray(0);
-
-		
         shadow_fbo->unbind();
 }
 
@@ -438,8 +453,6 @@ void GameManager::render() {
 	//camera.view = light.view;
 	renderShadowPass();
 	renderColorPass();
-	
- 
 	
 	CHECK_GL_ERRORS();
 }
@@ -476,7 +489,7 @@ void GameManager::play() {
 					zoomOut();
 					break;
 				case SDLK_1:
-					useProgram = phong_program;
+					useProgram = phong_diffuse_program;
 					break;
 				case SDLK_2:
 					useProgram = wireframe_program;
@@ -486,6 +499,19 @@ void GameManager::play() {
 					break;
 				case SDLK_s:
 					screenshoot();
+					break;
+				case SDLK_r:
+					if(rotateLight)
+						rotateLight = false;
+					else
+						rotateLight = true;
+
+					break;
+				case SDLK_d:
+					if(useDiffuse)
+						useDiffuse = false;
+					else 
+						useDiffuse = true;
 					break;
 				}
 				break;

@@ -7,13 +7,11 @@ smooth in vec3 g_n[3];
 smooth in vec3 g_v[3];
 smooth in vec3 g_l[3];
 smooth in vec4 g_crd[3];
-//smooth in vec4 g_lightspace[3];
 
 smooth out vec3 f_n;
 smooth out vec3 f_v;
 smooth out vec3 f_l;
 smooth out vec4 crd;
-//smooth out vec4 f_lightspace;
 
 smooth out vec3 bary;
  

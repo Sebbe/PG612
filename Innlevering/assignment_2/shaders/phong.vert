@@ -23,7 +23,6 @@ void main() {
 	0.0, 0.0, 0.5 * 1.01, 0.0,
 	0.5, 0.5, 0.5 - 0.01, 1.0);
 
-	//crd = position;
 	g_crd = t*light_matrix*vec4(position, 1.0);
 
 	float homogeneous_divide = (1.0f/modelview_matrix_inverse[3].w);
@@ -32,7 +31,6 @@ void main() {
 	g_v = normalize(cam_pos_world - position);
 	g_l = normalize(light_pos - position);
 	g_n = normalize(normal);
-	//g_lightspace = light_matrix;
 
 	gl_Position = modelviewprojection_matrix * vec4(position, 1.0);
 }

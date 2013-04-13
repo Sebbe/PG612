@@ -26,17 +26,12 @@ void main() {
     float spec = pow(max(0.0f, dot(n, h)), 128.0f);
 
 	vec3 colorUse;
-	bool shadow = false;
 
-	if (crd.x >= 0 && crd.x < crd.w && crd.y >= 0 && crd.y < crd.w)
-		shadow = (textureProj(depthTexture, crd).r > crd.z/crd.w);
+	float shadow = textureProj(depthTexture, crd).p;
 
-	/** Mest sansynlig en fortegns feil et sted **/
-    if(!shadow) {
-		colorUse = (diff*color + spec) * 0.5;
-	} else {
-		colorUse = diff*color + spec;
-	}
+	shadow = shadow * 0.75 + 0.75;
+	colorUse = shadow * color.rgb * diff + spec;
+
 	 //E.g., phong shading;
 	float k = min(bary[0],min(bary[1],bary[2])); //minimum of barycentric coordinate
 	colorUse = amplify(k, 40, -0.5)*colorUse;

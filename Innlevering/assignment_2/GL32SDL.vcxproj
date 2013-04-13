@@ -29,8 +29,6 @@
     <ClCompile Include="src\VirtualTrackball.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="shaders\cubemap.frag" />
-    <None Include="shaders\cubemap.vert" />
     <None Include="shaders\depth.frag" />
     <None Include="shaders\depth.vert" />
     <None Include="shaders\hidden_line.frag" />
@@ -39,6 +37,9 @@
     <None Include="shaders\phong.frag" />
     <None Include="shaders\phong.geom" />
     <None Include="shaders\phong.vert" />
+    <None Include="shaders\phong_diffuse.frag" />
+    <None Include="shaders\phong_diffuse.geom" />
+    <None Include="shaders\phong_diffuse.vert" />
     <None Include="shaders\wireframe.frag" />
     <None Include="shaders\wireframe.geom" />
     <None Include="shaders\wireframe.vert" />
