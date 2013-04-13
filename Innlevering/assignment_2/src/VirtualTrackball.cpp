@@ -2,6 +2,7 @@
 #include <cmath>
 #include <iostream>
 #include <algorithm>
+#include <glm/gtc/matrix_transform.hpp>
 
 glm::mat4 quatToMat4(glm::quat m_q) {
 	glm::mat4 m;

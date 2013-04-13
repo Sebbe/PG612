@@ -315,7 +315,7 @@ void GameManager::renderColorPass() {
 	{
 		glBindVertexArray(vao[1]);
 
-		glm::mat4 transform = view_matrix_new;
+		glm::mat4 transform = camera.view*cam_trackball.getTransform();
 	
 		transform[3][0] = 0;
 		transform[3][1] = 0;
@@ -330,7 +330,7 @@ void GameManager::renderColorPass() {
 		glm::vec3 light_pos = glm::mat3(model_matrix_inverse)*light.position/model_matrix_inverse[3].w;
 
 		if(useCubemap) {
-			transform = modelviewprojection_matrix*transform;
+			transform = camera.projection*transform;
 			glUniformMatrix4fv(cubemap_program->getUniform("transform"), 1, 0, glm::value_ptr(transform));
 		} else {
 			/** Lager light matrise for å sende inn til shader **/
