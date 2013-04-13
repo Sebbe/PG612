@@ -27,6 +27,7 @@ ShadowFBO::ShadowFBO(unsigned int width, unsigned int height) {
 	glDrawBuffer(GL_NONE);
 	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT,
 	GL_TEXTURE_2D, texture, 0);
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
 	//Check for completeness
 	CHECK_GL_ERRORS();

@@ -39,6 +39,9 @@
     <None Include="shaders\phong.frag" />
     <None Include="shaders\phong.geom" />
     <None Include="shaders\phong.vert" />
+    <None Include="shaders\phong_cube.frag" />
+    <None Include="shaders\phong_cube.geo" />
+    <None Include="shaders\phong_cube.vert" />
     <None Include="shaders\wireframe.frag" />
     <None Include="shaders\wireframe.geom" />
     <None Include="shaders\wireframe.vert" />

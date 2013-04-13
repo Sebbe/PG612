@@ -202,6 +202,9 @@ void GameManager::init() {
 	ilInit();
 	iluInit();
 
+	/** Init the bool for cubemap or not **/
+	useCubemap = true;
+
 	//Initialize the different stuff we need
 	model.reset(new Model("models/bunny.obj", false));
 	cube_vertices.reset(new BO<GL_ARRAY_BUFFER>(cube_vertices_data, sizeof(cube_vertices_data)));
@@ -214,7 +217,7 @@ void GameManager::init() {
 	light.projection = glm::perspective(90.0f, 1.0f, near_plane, far_plane);
 	light.view = glm::lookAt(light.position, glm::vec3(0), glm::vec3(0.0, 1.0, 0.0));
 
-	shadow_fbo.reset(new ShadowFBO(shadow_map_width, shadow_map_height));
+	shadow_fbo.reset(new ShadowFBO(window_width, window_height));
 	//Create the random transformations and colors for the bunnys
 	srand(static_cast<int>(time(NULL)));
 	for (int i=0; i<n_models; ++i) {
@@ -235,10 +238,18 @@ void GameManager::init() {
 	shadow_program.reset(new Program("shaders/depth.vert", "shaders/depth.frag"));
 	exploded_view_program.reset(new Program("shaders/hiden_line.vert", "shaders/hiden_line.geo", "shaders/hidden_line.frag"));
 	diffuse_cubemap.reset(new GLUtils::CubeMap("cubemaps/diffuse/", "jpg"));
+	cubemap_program.reset(new Program("shaders/phong_cube.vert", "shaders/phong_cube.geo", "shaders/phong_cube.frag"));
+	//shadow_program->setAttributePointer("position", 3, GL_FLOAT, GL_FALSE, 0, &light.position);
 	CHECK_GL_ERRORS();
 
 	//Set uniforms for the programs
 	//Typically diffuse_cubemap and shadowmap
+
+	cubemap_program->use();
+		glUniform1i(phong_program->getUniform("depthTexture"), 0);
+		glUniform1i(cubemap_program->getUniform("my_cube"), 1);
+	cubemap_program->disuse();
+
 	phong_program->use();
 
 	glUniform1i(phong_program->getUniform("depthTexture"), 0);
@@ -252,7 +263,7 @@ void GameManager::init() {
 	model->getVertices()->bind();
 	phong_program->setAttributePointer("position", 3);
 	wireframe_program->setAttributePointer("position", 3);
-	exploded_view_program->setAttributePointer("position", 3);
+	//exploded_view_program->setAttributePointer("position", 3);
 
 	// riktig?
 	//shadow_program->setAttributePointer("position", 3);
@@ -268,6 +279,7 @@ void GameManager::init() {
 	
 	glBindVertexArray(vao[1]);
 	cube_vertices->bind();
+
 	phong_program->setAttributePointer("position", 3);
 	wireframe_program->setAttributePointer("position", 3);
 	exploded_view_program->setAttributePointer("position", 3);
@@ -290,10 +302,14 @@ void GameManager::renderColorPass() {
 	glm::mat4 view_matrix_new = camera.view*cam_trackball.getTransform();
 	
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-	phong_program->use();
+	if(!useCubemap)
+		phong_program->use();
+	else
+		cubemap_program->use();
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, shadow_fbo->getTexture());
-	
+	glActiveTexture(GL_TEXTURE1);
+	diffuse_cubemap->bindTexture(GL_TEXTURE1);
 	//Bind shadow map and diffuse cube map
 	//diffuse_cubemap->bindTexture();
 	{
