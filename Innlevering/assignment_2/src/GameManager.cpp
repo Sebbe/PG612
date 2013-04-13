@@ -238,7 +238,7 @@ void GameManager::init() {
 	shadow_program.reset(new Program("shaders/depth.vert", "shaders/depth.frag"));
 	exploded_view_program.reset(new Program("shaders/hiden_line.vert", "shaders/hiden_line.geo", "shaders/hidden_line.frag"));
 	diffuse_cubemap.reset(new GLUtils::CubeMap("cubemaps/diffuse/", "jpg"));
-	cubemap_program.reset(new Program("shaders/phong_cube.vert", "shaders/phong_cube.geo", "shaders/phong_cube.frag"));
+	cubemap_program.reset(new Program("shaders/phong_cube.vert", "shaders/phong_cube.frag"));
 	//shadow_program->setAttributePointer("position", 3, GL_FLOAT, GL_FALSE, 0, &light.position);
 	CHECK_GL_ERRORS();
 
@@ -246,13 +246,13 @@ void GameManager::init() {
 	//Typically diffuse_cubemap and shadowmap
 
 	cubemap_program->use();
-		glUniform1i(phong_program->getUniform("depthTexture"), 0);
+		//glUniform1i(phong_program->getUniform("depthTexture"), 0);
 		glUniform1i(cubemap_program->getUniform("my_cube"), 1);
 	cubemap_program->disuse();
 
 	phong_program->use();
 
-	glUniform1i(phong_program->getUniform("depthTexture"), 0);
+		glUniform1i(phong_program->getUniform("depthTexture"), 0);
 	
 	phong_program->disuse();
 	CHECK_GL_ERRORS();
@@ -308,12 +308,18 @@ void GameManager::renderColorPass() {
 		cubemap_program->use();
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, shadow_fbo->getTexture());
-	glActiveTexture(GL_TEXTURE1);
-	diffuse_cubemap->bindTexture(GL_TEXTURE1);
+	if(useCubemap) diffuse_cubemap->bindTexture(GL_TEXTURE1);
+
 	//Bind shadow map and diffuse cube map
 	//diffuse_cubemap->bindTexture();
 	{
 		glBindVertexArray(vao[1]);
+
+		glm::mat4 transform = view_matrix_new;
+	
+		transform[3][0] = 0;
+		transform[3][1] = 0;
+		transform[3][2] = 0;
 
 		/** lager matriser **/
 		glm::mat4 model_matrix = glm::scale(glm::mat4(1.0f), glm::vec3(cube_scale));
@@ -323,22 +329,32 @@ void GameManager::renderColorPass() {
 		glm::mat4 modelviewprojection_matrix = camera.projection*modelview_matrix;
 		glm::vec3 light_pos = glm::mat3(model_matrix_inverse)*light.position/model_matrix_inverse[3].w;
 
-		/** Lager light matrise for å sende inn til shader **/
-        glm::mat4 modelview_matrixl = light.view*model_matrix;
-        glm::mat4 modelviewprojection_matrixl = light.projection*modelview_matrixl;
-		glUniformMatrix4fv(phong_program->getUniform("light_matrix"), 1, 0, glm::value_ptr(modelviewprojection_matrixl));
+		if(useCubemap) {
+			transform = modelviewprojection_matrix*transform;
+			glUniformMatrix4fv(cubemap_program->getUniform("transform"), 1, 0, glm::value_ptr(transform));
+		} else {
+			/** Lager light matrise for å sende inn til shader **/
+			glm::mat4 modelview_matrixl = light.view*model_matrix;
+			glm::mat4 modelviewprojection_matrixl = light.projection*modelview_matrixl;
+			glUniformMatrix4fv(phong_program->getUniform("light_matrix"), 1, 0, glm::value_ptr(modelviewprojection_matrixl));
 
-		/**  **/
-		glUniform3fv(phong_program->getUniform("light_pos"), 1, glm::value_ptr(light_pos));
-		glUniform3fv(phong_program->getUniform("color"), 1, glm::value_ptr(glm::vec3(1.0f, 0.8f, 0.8f)));
-		glUniformMatrix4fv(phong_program->getUniform("modelviewprojection_matrix"), 1, 0, glm::value_ptr(modelviewprojection_matrix));
-		glUniformMatrix4fv(phong_program->getUniform("modelview_matrix_inverse"), 1, 0, glm::value_ptr(modelview_matrix_inverse));
-		
+			/**  **/
+			glUniform3fv(phong_program->getUniform("light_pos"), 1, glm::value_ptr(light_pos));
+			glUniform3fv(phong_program->getUniform("color"), 1, glm::value_ptr(glm::vec3(1.0f, 0.8f, 0.8f)));
+			glUniformMatrix4fv(phong_program->getUniform("modelviewprojection_matrix"), 1, 0, glm::value_ptr(modelviewprojection_matrix));
+			glUniformMatrix4fv(phong_program->getUniform("modelview_matrix_inverse"), 1, 0, glm::value_ptr(modelview_matrix_inverse));
+		}
 		glDrawArrays(GL_TRIANGLES, 0, 36);
 	}
 	//diffuse_cubemap->unbindTexture();
 	/**sier vi er ferdig med phong program **/
-	phong_program->disuse();
+	if(!useCubemap) {
+		phong_program->disuse();
+	} else {
+		diffuse_cubemap->unbindTexture();
+		cubemap_program->disuse();
+	}
+
 	/** sier at vi skal bruke gjeldene program (wireframe, phong, eller hidden line) **/
 	useProgram->use();
 
