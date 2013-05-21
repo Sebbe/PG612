@@ -45,17 +45,37 @@ void RayTracer::render() {
 		for (unsigned int i=0; i<fb->getWidth(); ++i) {
 			glm::vec3 out_color(0.0, 0.0, 0.0);
 			float t = std::numeric_limits<float>::max();
-			float x, y, z;
+			float x1, y1, x2, y2, x3, y3, x4, y4, z;
 
 			// Create the ray using the view screen definition 
-			x = i*(screen.right-screen.left)/static_cast<float>(fb->getWidth()) + screen.left;
-			y = j*(screen.top-screen.bottom)/static_cast<float>(fb->getHeight()) + screen.bottom;
+			x1 = (i-0.25f)*(screen.right-screen.left)/static_cast<float>(fb->getWidth()) + screen.left;
+			y1 = (j-0.25f)*(screen.top-screen.bottom)/static_cast<float>(fb->getHeight()) + screen.bottom;
+
+			x2 = (i-0.25f)*(screen.right-screen.left)/static_cast<float>(fb->getWidth()) + screen.left;
+			y2 = (j+0.25f)*(screen.top-screen.bottom)/static_cast<float>(fb->getHeight()) + screen.bottom;
+
+			x3 = (i+0.25f)*(screen.right-screen.left)/static_cast<float>(fb->getWidth()) + screen.left;
+			y3 = (j+0.25f)*(screen.top-screen.bottom)/static_cast<float>(fb->getHeight()) + screen.bottom;
+
+			x4 = (i+0.25f)*(screen.right-screen.left)/static_cast<float>(fb->getWidth()) + screen.left;
+			y4 = (j-0.25f)*(screen.top-screen.bottom)/static_cast<float>(fb->getHeight()) + screen.bottom;
 			z = -1.0f;
-			glm::vec3 direction = glm::vec3(x, y, z);
-			Ray r = Ray(state->getCamPos(), direction);
+			
+			glm::vec3 directionR1 = glm::vec3(x1, y1, z);
+			Ray r1 = Ray(state->getCamPos(), directionR1);
+
+			glm::vec3 directionR2 = glm::vec3(x2, y2, z);
+			Ray r2 = Ray(state->getCamPos(), directionR2);
+
+			glm::vec3 directionR3 = glm::vec3(x3, y3, z);
+			Ray r3 = Ray(state->getCamPos(), directionR3);
+
+			glm::vec3 directionR4 = glm::vec3(x4, y4, z);
+			Ray r4 = Ray(state->getCamPos(), directionR4);
 
 			//Now do the ray-tracing to shade the pixel
-			out_color = state->rayTrace(r);
+			out_color = (state->rayTrace(r1) + state->rayTrace(r2) + state->rayTrace(r3) + state->rayTrace(r4)) * 0.25f;
+
 			fb->setPixel(i, j, out_color);
 		}
 	}

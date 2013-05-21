@@ -32,7 +32,7 @@ public:
 		float c = glm::dot(p0-p, p0-p)-this->r*this->r;
 		float abc = (b*b-4.0f*a*c);
 
-		static int initialized=0;
+		static int initialized=1;
 		if (!initialized) {
 			std::cerr << "The Sphere::intersect(...) function is not implemented properly!" << std::endl;
 			++initialized;
@@ -62,38 +62,24 @@ public:
 		else {
 			return -1;
 		}
-			/**
-			vecteur dist = s.pos - r.start; 
-		double B = r.dir * dist;
-		double D = B*B - dist * dist + s.size * s.size; 
-		if (D < 0.0f) 
-			return false; 
-		double t0 = B - sqrt(D); 
-		double t1 = B + sqrt(D);
-		bool retvalue = false;  
-		if ((t0 > 0.1f) && (t0 < t)) 
-		{
-			t = (float)t0;
-			retvalue = true; 
-		} 
-		if ((t1 > 0.1f) && (t1 < t)) 
-		{
-			t = (float)t1; 
-			retvalue = true; 
-		}
-		*/
 	}
 	
 	/**
 	  * Computes normal for an intersection point on a sphere
 	  */
 	const glm::vec3 computeNormal(const Ray& r, const float& t) {
-		static int initialized=0;
+		
+		const glm::vec3 qR = r.getDirection();
+		glm::vec3 q = qR * t;
+		q += r.getOrigin();
+
+		glm::vec3 n = (q - p) / this->r;
+		static int initialized=1;
 		if (!initialized) {
 			std::cerr << "The Sphere::computeNormal(...) function is not implemented properly!" << std::endl;
 			++initialized;
 		}
-		return glm::vec3(0);
+		return n;
 	}
 
 	glm::vec3 rayTrace(Ray &ray, const float& t, RayTracerState& state) {

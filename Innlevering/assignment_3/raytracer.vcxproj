@@ -51,7 +51,7 @@
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>include;$(PG612_ASSIMP_INCLUDE_PATH);$(PG612_GLM_INCLUDE_PATH);$(PG612_DEVIL_INCLUDE_PATH);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <OpenMPSupport>false</OpenMPSupport>
+      <OpenMPSupport>true</OpenMPSupport>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>

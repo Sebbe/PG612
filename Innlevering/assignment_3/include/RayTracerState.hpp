@@ -50,7 +50,7 @@ public:
 			return scene.at(k_min)->rayTrace(ray, t_min, *this);
 		}
 		else {
-			return glm::vec3(0.3f);
+			return glm::vec3(0.7f);
 		}
 	}
 
