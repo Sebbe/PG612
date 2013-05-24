@@ -86,7 +86,7 @@ public:
 		const float eta = eta0/eta1;
 		const float R0 = pow((eta0-eta1)/(eta0+eta1), 2.0f);
 
-		glm::vec3 n = glm::normalize(normal);
+		glm::vec3 n = normal;
 		glm::vec3 v = glm::normalize(ray.getDirection());
 
 		glm::vec3 reflect = glm::reflect(v, n);
@@ -102,7 +102,7 @@ public:
 		//vec4 reflect = texture(my_cube, texcoord_reflect);
 		//vec4 refract = texture(my_cube, texcoord_refract);
 
-		refract1 *= glm::vec3(eta, 1.0f, eta);
+		//refract1 *= glm::vec3(eta, 1.0f, eta);
 
 		//return normal;
 		return glm::mix(refract1, reflect1, fresnel);
