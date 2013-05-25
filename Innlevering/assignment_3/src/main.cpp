@@ -25,13 +25,11 @@ int main(int argc, char *argv[]) {
 		std::shared_ptr<SceneObjectEffect> fresnel(new FresnelEffect());
 		std::shared_ptr<SceneObjectEffect> reflect(new ReflectSteelEffect());
 
-		std::shared_ptr<SceneObjectEffect> curEffect = fresnel;
-
-		std::shared_ptr<SceneObject> s1(new Sphere(glm::vec3(-3.0f, 0.0f, 6.0f), 2.0f, curEffect));
+		std::shared_ptr<SceneObject> s1(new Sphere(glm::vec3(-3.0f, 0.0f, 6.0f), 2.0f, fresnel));
 		rt->addSceneObject(s1);
-		std::shared_ptr<SceneObject> s2(new Sphere(glm::vec3(3.0f, 0.0f, 3.0f), 2.0f, curEffect));
+		std::shared_ptr<SceneObject> s2(new Sphere(glm::vec3(3.0f, 0.0f, 3.0f), 2.0f, phong));
 		rt->addSceneObject(s2);
-		std::shared_ptr<SceneObject> s3(new Sphere(glm::vec3(0.0f, 3.0f, 9.0f), 2.0f, curEffect));
+		std::shared_ptr<SceneObject> s3(new Sphere(glm::vec3(0.0f, 3.0f, 9.0f), 2.0f, reflect));
 		rt->addSceneObject(s3);
 		std::shared_ptr<SceneObject> s4(new Triangle(glm::vec3(-2.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.5f, 0.0f), glm::vec3(2.0f, 0.0f, 0.0f), reflect));
 		rt->addSceneObject(s4);
