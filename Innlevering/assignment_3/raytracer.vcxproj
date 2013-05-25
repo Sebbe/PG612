@@ -95,6 +95,7 @@
     <ClInclude Include="include\SceneObjectEffect.hpp" />
     <ClInclude Include="include\Sphere.hpp" />
     <ClInclude Include="include\Timer.h" />
+    <ClInclude Include="include\Triangle.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

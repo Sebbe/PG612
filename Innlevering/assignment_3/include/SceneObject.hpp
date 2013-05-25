@@ -33,6 +33,7 @@ public:
 	  * @param depth The recursion depth of this tracing
 	  */
 	virtual glm::vec3 rayTrace(Ray &ray, const float& t, RayTracerState& state) = 0;
+	
 
 protected:
 	std::shared_ptr<SceneObjectEffect> effect;

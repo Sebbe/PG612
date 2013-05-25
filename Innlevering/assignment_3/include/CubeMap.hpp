@@ -118,31 +118,45 @@ private:
 	  */
 	static glm::vec3 readTexture(texture& tex, float s, float t) {
 		glm::vec3 out_color;
-		
-		unsigned int xfc = static_cast<unsigned int>(glm::ceil(std::min(s*tex.width, tex.width-1.0f)));
-		unsigned int xff = static_cast<unsigned int>(glm::floor(std::min(s*tex.width, tex.width-1.0f)));
-
-		unsigned int yfc = static_cast<unsigned int>(glm::ceil(std::min(t*tex.height, tex.height-1.0f)));
-		unsigned int yff = static_cast<unsigned int>(glm::floor(std::min(t*tex.height, tex.height-1.0f)));
 
 		float xf = std::min(s*tex.width, tex.width-1.0f);
 		float yf = std::min(t*tex.height, tex.height-1.0f);
 
 		unsigned int xm = static_cast<unsigned int>(xf);
+		unsigned int xmC = static_cast<unsigned int>(glm::ceil(xf));
 		unsigned int ym = static_cast<unsigned int>(yf);
+		unsigned int ymC = static_cast<unsigned int>(glm::ceil(yf));
 
 		unsigned int i0 = (ym*tex.width + xm)*3;
-		//unsigned int i0 = (yff * tex.width + xff)*3;
-		unsigned int i1 = (yfc * tex.width + xff)*3;
-		unsigned int i2 = (yfc * tex.width + xfc)*3;
-		unsigned int i3 = (yff * tex.width + xfc)*3;
+		unsigned int i1 = (ymC * tex.width + xm)*3;
+		unsigned int i2 = (ymC * tex.width + xmC)*3;
+		unsigned int i3 = (ym * tex.width + xmC)*3;
+		
+		float remX;
+		float remY;
+
+		if(xm == xmC) {
+			remX = 1;
+		} else {
+			remX = xm / xmC - 1.0f;
+		}
+
+		if(ym == ymC) {
+			remX = 1;
+		} else {
+			remY = ym / ymC - 1.0f;
+		}
 
 		for (int k=0; k<3; ++k) {
 			float c0 = tex.data.at(i0+k);
+			/*
 			float c1 = tex.data.at(i1+k);
 			float c2 = tex.data.at(i2+k);
 			float c3 = tex.data.at(i3+k);
-			//out_color[k] = ((c0 + c1 + c2 + c3) * 0.25f);
+			float remTop = glm::mix(c2, c1, remY);
+			float remBotton = glm::mix(c0, c3, remX);
+			out_color[k] = glm::mix(remTop, remBotton, remY+remX);
+			*/
 			out_color[k] = c0;
 		}
 

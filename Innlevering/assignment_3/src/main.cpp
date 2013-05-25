@@ -7,6 +7,7 @@
 
 #include "RayTracer.h"
 #include "Sphere.hpp"
+#include "Triangle.h"
 #include "CubeMap.hpp"
 #include "Timer.h"
 
@@ -32,7 +33,7 @@ int main(int argc, char *argv[]) {
 		rt->addSceneObject(s2);
 		std::shared_ptr<SceneObject> s3(new Sphere(glm::vec3(0.0f, 3.0f, 9.0f), 2.0f, curEffect));
 		rt->addSceneObject(s3);
-		std::shared_ptr<SceneObject> s4(new Sphere(glm::vec3(0.0f, 0.0f, 0.5f), 1.0f, reflect));
+		std::shared_ptr<SceneObject> s4(new Triangle(glm::vec3(-2.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.5f, 0.0f), glm::vec3(2.0f, 0.0f, 0.0f), reflect));
 		rt->addSceneObject(s4);
 
 		std::shared_ptr<SceneObject> cube_map(new CubeMap("cubemaps/SaintLazarusChurch3/posx.jpg", "cubemaps/SaintLazarusChurch3/negx.jpg",

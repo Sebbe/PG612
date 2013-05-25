@@ -14,6 +14,10 @@ public:
 	  * and a ray. It can also fire new rays etc.
 	  */
 	virtual glm::vec3 rayTrace(Ray &ray, const float& t, const glm::vec3& normal, RayTracerState& state) = 0;
+	/**
+	based on the effect, the light dissapears
+	*/
+
 private:
 };
 
@@ -51,6 +55,7 @@ public:
 
 	glm::vec3 rayTrace(Ray &ray, const float& t, const glm::vec3& normal, RayTracerState& state) {
 		glm::vec3 out_color = color;
+		ray.invalidate();
 		glm::vec3 g_l = glm::normalize(light_pos - (ray.getOrigin() + ray.getDirection() * t));
 		glm::vec3 g_v = glm::normalize(-ray.getDirection());
 
@@ -81,31 +86,86 @@ public:
 		const float eta_diamond = 2.419f;
 
 		const float eta0 = eta_air;
-		const float eta1 = eta_pyrex;
+		const float eta1 = eta_water;
 
-		const float eta = eta0/eta1;
-		const float R0 = pow((eta0-eta1)/(eta0+eta1), 2.0f);
+		float eta = eta0/eta1;
+		float R0 = pow((eta0-eta1)/(eta0+eta1), 2.0f);
 
 		glm::vec3 n = normal;
-		glm::vec3 v = glm::normalize(ray.getDirection());
+		glm::vec3 v = ray.getDirection();
 
-		glm::vec3 reflect = glm::reflect(v, n);
-		glm::vec3 refract = glm::refract(v, n, eta);
 	
-		float fresnel = R0 + (1.0f-R0)*pow((1.0f-glm::dot(v, n)), 5.0f);
+		float fresnel;
 
-		Ray reflect_ray = ray.spawn(t+0.00001f, reflect);
-		Ray refract_ray = ray.spawn(t+0.00001f, refract);
+		glm::vec3 reflect;
+		glm::vec3 refract;
+		/*
+		if(glm::dot(v, n) <= 0) { 
+			// enter
+			R0 = pow((eta0-eta1)/(eta0+eta1), 2.0f);
+			eta = eta0/eta1;
+
+			newRefractDir = glm::refract(v, n, eta);
+			newReflectDir = glm::reflect(v, n);
+			fresnel = R0 + (1.0f-R0)*glm::pow((1.0f-glm::dot(-v, n)), 5.0f);
+		} else { 
+			// exit
+			R0 = pow((eta1-eta0)/(eta0+eta1), 2.0f);
+			eta = eta1/eta0;
+
+			newRefractDir = glm::refract(v, -n, eta);
+			newReflectDir = glm::reflect(v, -n);
+			fresnel = R0 + (1.0f-R0)*glm::pow((1.0f-glm::dot(newRefractDir, n)), 5.0f);
+		}
+		
+		if(glm::dot(v, n) <= 0) { // enter
+			R0 = pow((eta0-eta1)/(eta0+eta1), 2.0f);
+			eta = eta0/eta1;
+			refract = glm::refract(v, n, eta);
+			reflect = glm::reflect(v, n);
+			fresnel = R0 + (1.0f-R0)*glm::pow((1.0f-glm::dot(-v, n)), 5.0f);
+			
+		} else { //exit
+			R0 = pow((eta1-eta0)/(eta0+eta1), 2.0f);
+			eta = eta1/eta0;
+			//reflect = glm::reflect(v, n);
+			//refract = glm::refract(v, n, eta);
+			refract = glm::refract(v, -n, eta);
+			reflect = glm::reflect(v, -n);
+			fresnel = R0 + (1.0f-R0)*glm::pow((1.0f-glm::dot(refract, n)), 5.0f);
+		} */
+		if(glm::dot(v, n) >= 0) { // exiting
+			
+			R0 = pow((eta1-eta0)/(eta0+eta1), 2.0f);
+			eta = eta1/eta0;
+			//fresnel = R0 + (1.0f-R0)*pow((1.0f-glm::dot(v, n)), 5.0f);
+			
+			//reflect = glm::reflect(v, n);
+			//refract = glm::refract(v, n, eta);
+			refract = glm::refract(v, -n, eta);
+			reflect = glm::reflect(v, -n);
+			fresnel = R0 + (1.0f-R0)*glm::pow((1.0f-glm::dot(refract, n)), 5.0f);
+		} else { //entering
+			
+			R0 = pow((eta0-eta1)/(eta0+eta1), 2.0f);
+			eta = eta0/eta1;
+			refract = glm::refract(-v, n, eta);
+			reflect = glm::reflect(-v, n);
+			fresnel = R0 + (1.0f-R0)*glm::pow((1.0f-glm::dot(-v, n)), 5.0f);
+
+		}
+
+		Ray reflect_ray = ray.spawn(t, reflect, 10);
+		Ray refract_ray = ray.spawn(t, refract, 10);
 
 		glm::vec3 reflect1 = state.rayTrace(reflect_ray);
 		glm::vec3 refract1 = state.rayTrace(refract_ray);
-		//vec4 reflect = texture(my_cube, texcoord_reflect);
-		//vec4 refract = texture(my_cube, texcoord_refract);
 
-		//refract1 *= glm::vec3(eta, 1.0f, eta);
+		refract1 *= glm::vec3(eta, 1.0f, eta);
 
 		//return normal;
 		return glm::mix(refract1, reflect1, fresnel);
+		//return refract1;
 	}
 };
 
@@ -117,7 +177,7 @@ public:
 
 		glm::vec3 reflect = glm::reflect(v, n);
 
-		Ray reflect_ray = ray.spawn(t+0.00001f, reflect);
+		Ray reflect_ray = ray.spawn(t, reflect, 10);
 
 		glm::vec3 reflect1 = state.rayTrace(reflect_ray);
 		return glm::vec3(reflect1);
